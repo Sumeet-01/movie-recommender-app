@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container" style="max-width:900px">
+  <div class="page-header" style="padding-left:0;text-align:center">
+    <h1>Features</h1>
+    <p>Everything you need for the ultimate movie experience.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-xl);padding:var(--sp-xl) 0">
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🤖</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">AI Recommendations</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Hybrid ML engine combining collaborative and content-based filtering for uniquely personalized suggestions.</p>
+    </div>
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">📚</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Massive Database</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Access over 800,000 movies with detailed information, cast, crew, trailers, and reviews.</p>
+    </div>
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">📋</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Custom Lists</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Create and manage watchlists, favorites, and themed collections to organize your movie journey.</p>
+    </div>
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">⭐</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Rate & Review</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Share your opinions with detailed ratings and reviews. Your ratings improve your recommendations.</p>
+    </div>
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🔍</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Advanced Discovery</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Filter by genre, year, rating, and more. Explore trending, popular, and top-rated collections.</p>
+    </div>
+
+    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
+      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🎬</div>
+      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Watch Trailers</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Watch trailers and teasers directly within the app without leaving the page.</p>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;padding:var(--sp-3xl) 0">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg">Get Started Free</a>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# ===== DETAIL HERO ===== #}
+<section class="detail-hero">
+  <div class="backdrop" style="background-image:url('https://image.tmdb.org/t/p/original{{ movie.backdrop_path }}')"></div>
+  <div class="detail-info">
+    <div class="detail-poster slide-up">
+      {% if movie.poster_path %}
+      <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}">
+      {% endif %}
+    </div>
+    <div class="detail-text slide-up">
+      {% if movie.tagline %}
+      <p class="tagline">{{ movie.tagline }}</p>
+      {% endif %}
+      <h1>{{ movie.title }} {% if movie.release_date %}<span class="year">({{ movie.release_date[:4] }})</span>{% endif %}</h1>
+
+      <div class="d-meta">
+        <span class="score">
+          <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+          {{ "%.1f"|format(movie.vote_average) }} / 10
+        </span>
+        <span>{{ movie.vote_count|default(0) }} votes</span>
+        {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
+        {% if movie.original_language %}<span>{{ movie.original_language|upper }}</span>{% endif %}
+        {% if movie.status %}<span>{{ movie.status }}</span>{% endif %}
+      </div>
+
+      {% if movie.genres %}
+      <div class="d-genres">
+        {% for g in movie.genres %}
+        <a href="{{ url_for('main.genre', genre_id=g.id) }}" class="genre-chip">{{ g.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <p class="d-overview">{{ movie.overview }}</p>
+
+      <div class="d-actions">
+        {% if trailers %}
+        <button class="btn btn-accent btn-lg" onclick="openTrailer('{{ trailers[0].key }}')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Watch Trailer
+        </button>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+          {% if in_watchlist %}
+          <button class="btn btn-outline" onclick="removeFromWatchlist({{ movie_db.id }})" id="wlBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            In Watchlist
+          </button>
+          {% else %}
+          <button class="btn btn-outline" onclick="addToWatchlist({{ movie_db.id }})" id="wlBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add to Watchlist
+          </button>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {# User Rating #}
+      {% if current_user.is_authenticated %}
+      <div class="your-rating">
+        <label>Your Rating:</label>
+        <div class="star-rating" data-tmdb="{{ movie.id }}">
+          {% for i in range(1, 11) %}
+          <svg class="star {% if user_rating and user_rating.score >= i %}active{% endif %}" data-value="{{ i }}" viewBox="0 0 24 24" onclick="rateMovie({{ movie.id }}, {{ i }})">
+            <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>
+          </svg>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{# ===== ADDITIONAL INFO ===== #}
+<div class="container">
+
+  {# Trailers #}
+  {% if trailers %}
+  <section class="section">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">Trailers & Videos</h2>
+    <div style="display:flex;gap:var(--sp-lg);overflow-x:auto;scrollbar-width:none">
+      {% for v in trailers %}
+      <div class="trailer-card" onclick="openTrailer('{{ v.key }}')">
+        <div class="trailer-thumb">
+          <img src="https://img.youtube.com/vi/{{ v.key }}/hqdefault.jpg" alt="{{ v.name }}" loading="lazy">
+          <div class="play-ov">
+            <span class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg></span>
+          </div>
+        </div>
+        <p class="trailer-title">{{ v.name }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# Cast #}
+  {% if movie.credits and movie.credits.cast %}
+  <section class="section">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">Top Cast</h2>
+    <div class="cast-row">
+      {% for actor in movie.credits.cast[:12] %}
+      <div class="cast-card">
+        {% if actor.profile_path %}
+        <img src="https://image.tmdb.org/t/p/w185{{ actor.profile_path }}" alt="{{ actor.name }}" loading="lazy">
+        {% else %}
+        <div style="width:90px;height:90px;border-radius:var(--r-full);background:var(--bg-card);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-sm);font-size:var(--fs-xl);color:var(--text3)">👤</div>
+        {% endif %}
+        <p class="cast-name">{{ actor.name }}</p>
+        <p class="cast-char">{{ actor.character }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# Similar Movies #}
+  {% if similar_movies %}
+  <section class="section">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">More Like This</h2>
+    <div class="movie-grid">
+      {% for m in similar_movies %}
+      <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
+        <div class="poster">
+          {% if m.poster_path %}
+          <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
+          {% else %}
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
+          {% endif %}
+          <div class="ov">
+            <span class="score">
+              <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+              {{ "%.1f"|format(m.vote_average) }}
+            </span>
+          </div>
+        </div>
+        <p class="c-title">{{ m.title }}</p>
+        <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# Reviews #}
+  {% if reviews %}
+  <section class="section">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">User Reviews</h2>
+    {% for r in reviews %}
+    <div class="review-card">
+      <div class="review-header">
+        <div class="review-avatar">{{ r.user.username[0]|upper if r.user else 'U' }}</div>
+        <div>
+          <p class="review-author">{{ r.user.username if r.user else 'User' }}</p>
+          <p class="review-date">{% if r.rating %}★ {{ r.rating }}/10{% endif %}</p>
+        </div>
+      </div>
+      <p class="review-body">{{ r.content }}</p>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# Write Review Form #}
+  {% if current_user.is_authenticated %}
+  <section class="section" style="max-width:700px">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">Write a Review</h2>
+    <div class="review-card">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="reviewTitle" placeholder="Summary of your thoughts">
+      </div>
+      <div class="form-group">
+        <label>Your Review</label>
+        <textarea id="reviewContent" rows="4" placeholder="What did you think?" style="resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:var(--sp-md);align-items:center">
+        <button class="btn btn-accent" onclick="submitReview({{ movie_db.id }})">Submit Review</button>
+        <label style="font-size:var(--fs-sm);color:var(--text3);display:flex;align-items:center;gap:var(--sp-xs)">
+          <input type="checkbox" id="isSpoiler"> Contains spoilers
+        </label>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# Movie Details Grid #}
+  {% if movie.production_companies or movie.budget or movie.revenue %}
+  <section class="section">
+    <h2 class="section-title" style="padding:0 0 var(--sp-lg)">Movie Info</h2>
+    <div class="stat-grid">
+      {% if movie.budget and movie.budget > 0 %}
+      <div class="stat-card">
+        <div class="stat-value">${{ "{:,.0f}".format(movie.budget / 1000000) }}M</div>
+        <div class="stat-label">Budget</div>
+      </div>
+      {% endif %}
+      {% if movie.revenue and movie.revenue > 0 %}
+      <div class="stat-card">
+        <div class="stat-value">${{ "{:,.0f}".format(movie.revenue / 1000000) }}M</div>
+        <div class="stat-label">Revenue</div>
+      </div>
+      {% endif %}
+      {% if movie.popularity %}
+      <div class="stat-card">
+        <div class="stat-value">{{ "%.0f"|format(movie.popularity) }}</div>
+        <div class="stat-label">Popularity</div>
+      </div>
+      {% endif %}
+      {% if movie.vote_count %}
+      <div class="stat-card">
+        <div class="stat-value">{{ "{:,}".format(movie.vote_count) }}</div>
+        <div class="stat-label">Total Votes</div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openTrailer(key) {
+  const overlay = document.getElementById('modalOverlay');
+  const content = document.getElementById('modalContent');
+  content.innerHTML = `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  overlay.classList.add('show');
+}
+</script>
+{% endblock %}

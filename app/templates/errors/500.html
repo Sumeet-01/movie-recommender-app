@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="empty-state" style="min-height:70vh">
+  <h1 style="font-size:8rem;color:var(--accent);font-weight:800;line-height:1">500</h1>
+  <h2>Something Went Wrong</h2>
+  <p>We've been notified and are working to fix this. Please try again later.</p>
+  <div style="display:flex;gap:var(--sp-md)">
+    <a href="{{ url_for('main.index') }}" class="btn btn-accent">Go Home</a>
+    <button onclick="location.reload()" class="btn btn-outline">Try Again</button>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header container">
+  <h1>🔥 Trending Movies</h1>
+  <p>What everyone's watching right now.</p>
+</div>
+
+<div class="filters-bar container">
+  <a href="{{ url_for('main.trending', window='day') }}" class="btn {% if time_window == 'day' %}btn-accent{% else %}btn-outline{% endif %} btn-sm">Today</a>
+  <a href="{{ url_for('main.trending', window='week') }}" class="btn {% if time_window == 'week' %}btn-accent{% else %}btn-outline{% endif %} btn-sm">This Week</a>
+</div>
+
+<div class="container">
+  {% if movies %}
+  <div class="movie-grid">
+    {% for m in movies %}
+    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
+      <div class="poster">
+        {% if m.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
+        {% endif %}
+        <div class="ov">
+          <span class="score">
+            <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+            {{ "%.1f"|format(m.vote_average) }}
+          </span>
+        </div>
+      </div>
+      <p class="c-title">{{ m.title }}</p>
+      <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <h2>Nothing trending yet</h2>
+    <p>Check back soon for trending movies.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

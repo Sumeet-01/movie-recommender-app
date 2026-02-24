@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container" style="max-width:800px">
+  <div class="page-header" style="padding-left:0">
+    <h1>API Documentation</h1>
+    <p>CineMate REST API endpoints for developers.</p>
+  </div>
+
+  <div style="font-size:var(--fs-sm);color:var(--text2);line-height:1.8">
+
+    <div class="settings-section">
+      <h2>Search Movies</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--green);font-weight:600">GET</span> /api/search?q={query}
+      </div>
+      <p>Search for movies by title. Returns a list of matching results with poster paths, ratings, and release dates.</p>
+      <p style="margin-top:var(--sp-sm);color:var(--text3)">Rate limited: 30 requests / 60 seconds</p>
+    </div>
+
+    <div class="settings-section">
+      <h2>Watchlist</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--gold);font-weight:600">POST</span> /api/watchlist/add/{movie_id}
+      </div>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--accent);font-weight:600">POST</span> /api/watchlist/remove/{movie_id}
+      </div>
+      <p>Add or remove a movie from your watchlist. Requires authentication.</p>
+    </div>
+
+    <div class="settings-section">
+      <h2>Rate a Movie</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--gold);font-weight:600">POST</span> /api/rate/{tmdb_id}
+      </div>
+      <p>Rate a movie on a 1-10 scale. Send JSON body: <code style="background:var(--bg-input);padding:2px 6px;border-radius:var(--r-sm)">{"rating": 8}</code></p>
+    </div>
+
+    <div class="settings-section">
+      <h2>Submit Review</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--gold);font-weight:600">POST</span> /api/review/{movie_id}
+      </div>
+      <p>Submit a review for a movie. JSON body: <code style="background:var(--bg-input);padding:2px 6px;border-radius:var(--r-sm)">{"title": "...", "content": "...", "rating": 8, "is_spoiler": false}</code></p>
+    </div>
+
+    <div class="settings-section">
+      <h2>Recommendations</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--green);font-weight:600">GET</span> /api/recommendations?n={count}
+      </div>
+      <p>Get AI-powered personalized movie recommendations. Requires authentication. Default returns 20 results.</p>
+    </div>
+
+    <div class="settings-section">
+      <h2>User Statistics</h2>
+      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
+        <span style="color:var(--green);font-weight:600">GET</span> /api/stats
+      </div>
+      <p>Get your account statistics including total ratings, reviews, watchlist count, and favorite genres.</p>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

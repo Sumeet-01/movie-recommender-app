@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header container">
+  <h1>My Watchlist</h1>
+  <p>{{ movies|length }} movie{{ 's' if movies|length != 1 else '' }} saved for later.</p>
+</div>
+
+<div class="container">
+  {% if movies %}
+  <div class="wl-grid">
+    {% for m in movies %}
+    <div class="wl-item">
+      <div class="poster-sm">
+        {% if m.poster_path %}
+        <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}">
+          <img src="https://image.tmdb.org/t/p/w185{{ m.poster_path }}" alt="{{ m.title }}">
+        </a>
+        {% endif %}
+      </div>
+      <div class="item-info">
+        <h3><a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}">{{ m.title }}</a></h3>
+        <p style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:var(--sp-xs)">
+          {{ m.release_date[:4] if m.release_date else '' }}
+          {% if m.vote_average %} · ★ {{ "%.1f"|format(m.vote_average) }}{% endif %}
+          {% if m.runtime %} · {{ m.runtime }} min{% endif %}
+        </p>
+        <p>{{ m.overview[:120] }}{% if m.overview and m.overview|length > 120 %}...{% endif %}</p>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-ghost btn-icon-sm" onclick="removeFromWatchlistCard(this, {{ m.id }})" title="Remove">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <h2>Your watchlist is empty</h2>
+    <p>Browse movies and add them to your watchlist to keep track of what to watch next.</p>
+    <a href="{{ url_for('main.discover') }}" class="btn btn-accent">Discover Movies</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

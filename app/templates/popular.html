@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header container">
+  <h1>🌟 Popular Movies</h1>
+  <p>The most watched and talked-about films right now.</p>
+</div>
+
+<div class="container">
+  {% if movies %}
+  <div class="movie-grid">
+    {% for m in movies %}
+    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
+      <div class="poster">
+        {% if m.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
+        {% endif %}
+        <div class="ov">
+          <span class="score">
+            <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+            {{ "%.1f"|format(m.vote_average) }}
+          </span>
+        </div>
+      </div>
+      <p class="c-title">{{ m.title }}</p>
+      <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    <h2>No popular movies available</h2>
+    <p>Check back soon.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

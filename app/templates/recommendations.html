@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header container">
+  <h1>✨ Recommended for You</h1>
+  <p>Personalized picks based on your ratings and watch history.</p>
+</div>
+
+<div class="container">
+  {% if movies %}
+  <div class="movie-grid">
+    {% for m in movies %}
+    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
+      <div class="poster">
+        {% if m.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
+        {% endif %}
+        <div class="ov">
+          <span class="score">
+            <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+            {{ "%.1f"|format(m.vote_average) }}
+          </span>
+        </div>
+      </div>
+      <p class="c-title">{{ m.title }}</p>
+      <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+    <h2>No recommendations yet</h2>
+    <p>Rate some movies first, and we'll generate personalized recommendations just for you.</p>
+    <a href="{{ url_for('main.discover') }}" class="btn btn-accent">Start Rating</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

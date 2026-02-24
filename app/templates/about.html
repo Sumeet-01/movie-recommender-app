@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container" style="max-width:800px">
+  <div class="page-header" style="padding-left:0">
+    <h1>About CineMate</h1>
+    <p>Your intelligent movie companion.</p>
+  </div>
+
+  <div style="font-size:var(--fs-md);color:var(--text2);line-height:1.8">
+    <p style="margin-bottom:var(--sp-xl)">
+      CineMate is a next-generation movie discovery platform built for film enthusiasts.
+      We combine the power of machine learning with a massive movie database to deliver
+      a personalized cinema experience unlike any other.
+    </p>
+
+    <div class="stat-grid" style="padding:0;margin-bottom:var(--sp-3xl)">
+      <div class="stat-card">
+        <div class="stat-value text-accent">800K+</div>
+        <div class="stat-label">Movies</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-gold">AI</div>
+        <div class="stat-label">Powered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-green">100%</div>
+        <div class="stat-label">Free</div>
+      </div>
+    </div>
+
+    <h2 style="font-size:var(--fs-xl);color:var(--white);margin-bottom:var(--sp-lg)">Our Mission</h2>
+    <p style="margin-bottom:var(--sp-xl)">
+      We believe everyone deserves to find their perfect movie. By leveraging collaborative filtering,
+      content-based analysis, and hybrid recommendation algorithms, CineMate learns what you love
+      and surfaces hidden gems tailored precisely to your taste.
+    </p>
+
+    <h2 style="font-size:var(--fs-xl);color:var(--white);margin-bottom:var(--sp-lg)">Technology</h2>
+    <p style="margin-bottom:var(--sp-xl)">
+      Built with Flask, Python, and powered by The Movie Database (TMDB) API, CineMate
+      features a custom ML recommendation engine, repository pattern architecture, and a modern
+      dark-theme UI designed for cinephiles.
+    </p>
+
+    <div style="text-align:center;padding:var(--sp-3xl) 0">
+      <a href="{{ url_for('main.discover') }}" class="btn btn-accent btn-lg">Start Discovering</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+# Core Framework
+Flask==3.0.0
+Werkzeug==3.0.0
+
+# Database
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+SQLAlchemy==2.0.23
+
+# Authentication
+Flask-Login==0.6.3
+
+# Environment & Configuration
+python-dotenv==1.0.0
+
+# HTTP Requests
+requests==2.31.0
+
+# Machine Learning & Data Processing
+numpy==1.24.3
+scipy==1.11.4
+
+# Production Server
+gunicorn==21.2.0
+
+# Development Tools (optional but recommended)
+# pytest==7.4.3
+# pytest-cov==4.1.0
+# black==23.11.0
+# flake8==6.1.0
+# mypy==1.7.0
+
+# Optional: Redis for production caching
+# redis==5.0.1
+# flask-caching==2.1.0
+
+# Optional: Background task processing
+# celery==5.3.4
+
+# Optional: Email support
+# flask-mail==0.9.1
+
+# Optional: API documentation
+# flask-swagger-ui==4.11.1
+# flasgger==0.9.7.1

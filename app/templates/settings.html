@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header container">
+  <h1>Settings</h1>
+  <p>Manage your account preferences.</p>
+</div>
+
+<div class="container" style="max-width:700px">
+  {# Profile Settings #}
+  <div class="settings-section">
+    <h2>Profile</h2>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" value="{{ current_user.username }}" disabled style="opacity:.6">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" value="{{ current_user.email }}" disabled style="opacity:.6">
+    </div>
+    <div class="form-group">
+      <label>Bio</label>
+      <textarea rows="3" placeholder="Tell us about yourself..." id="bioInput">{{ current_user.bio or '' }}</textarea>
+    </div>
+    <button class="btn btn-accent btn-sm" onclick="showToast('Profile updates coming soon!', 'info')">Save Changes</button>
+  </div>
+
+  {# Preferences #}
+  <div class="settings-section">
+    <h2>Preferences</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--sp-md) 0;border-bottom:1px solid var(--border)">
+      <div>
+        <p style="font-size:var(--fs-base);color:var(--white);font-weight:500">Email Notifications</p>
+        <p style="font-size:var(--fs-xs);color:var(--text3)">Get notified about new recommendations</p>
+      </div>
+      <label style="position:relative;width:48px;height:24px;cursor:pointer">
+        <input type="checkbox" style="opacity:0;width:0;height:0">
+        <span style="position:absolute;inset:0;background:var(--bg-input);border-radius:var(--r-full);transition:all var(--t-base)"></span>
+      </label>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--sp-md) 0">
+      <div>
+        <p style="font-size:var(--fs-base);color:var(--white);font-weight:500">Adult Content</p>
+        <p style="font-size:var(--fs-xs);color:var(--text3)">Show adult-rated movies in results</p>
+      </div>
+      <label style="position:relative;width:48px;height:24px;cursor:pointer">
+        <input type="checkbox" style="opacity:0;width:0;height:0">
+        <span style="position:absolute;inset:0;background:var(--bg-input);border-radius:var(--r-full);transition:all var(--t-base)"></span>
+      </label>
+    </div>
+  </div>
+
+  {# Danger Zone #}
+  <div class="settings-section" style="border-color:var(--accent)">
+    <h2 style="color:var(--accent)">Danger Zone</h2>
+    <p style="font-size:var(--fs-sm);color:var(--text3);margin-bottom:var(--sp-lg)">These actions are irreversible. Please be careful.</p>
+    <div style="display:flex;gap:var(--sp-md)">
+      <button class="btn btn-outline btn-sm" onclick="showToast('Feature coming soon', 'info')">Export Data</button>
+      <button class="btn btn-sm" style="background:var(--accent);color:var(--white)" onclick="showToast('Account deletion not implemented', 'error')">Delete Account</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
