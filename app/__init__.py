@@ -1,15 +1,15 @@
 """
 CineMate Application Factory
-Creates and configures the Flask application with all extensions and blueprints.
+Auto-initializes database, registers all blueprints, and starts ML engine.
 """
 
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from .config import Config
 
-# Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
@@ -19,19 +19,14 @@ login.login_message_category = 'info'
 
 
 def create_app(config_class=Config):
-    """
-    Application factory function.
-    
-    Args:
-        config_class: Configuration class to use
-        
-    Returns:
-        Configured Flask application
-    """
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Initialize extensions with app
+    # Ensure instance folder exists for SQLite
+    instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'instance')
+    os.makedirs(instance_path, exist_ok=True)
+
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     login.init_app(app)
@@ -39,13 +34,8 @@ def create_app(config_class=Config):
     # Register blueprints
     from app.routes.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    # Use advanced routes if available, otherwise fallback to basic
-    try:
-        from app.routes.main_advanced import bp as main_bp
-    except ImportError:
-        from app.routes.main import bp as main_bp
-    
+
+    from app.routes.main_advanced import bp as main_bp
     app.register_blueprint(main_bp)
 
     # Error handlers
@@ -60,42 +50,28 @@ def create_app(config_class=Config):
         db.session.rollback()
         return render_template('errors/500.html'), 500
 
-    # Context processor for global template variables
+    # Global template variables
     @app.context_processor
     def inject_globals():
-        """Inject global variables into all templates."""
-        return {
-            'app_name': 'CineMate',
-            'app_version': '2.0.0'
-        }
+        return {'app_name': 'CineMate', 'app_version': '3.0.0'}
 
-    # Shell context for flask shell command
-    @app.shell_context_processor
-    def make_shell_context():
-        """Make database and models available in flask shell."""
-        from app.models import User, Movie, Rating, Review, MovieList
-        return {
-            'db': db,
-            'User': User,
-            'Movie': Movie,
-            'Rating': Rating,
-            'Review': Review,
-            'MovieList': MovieList
-        }
-
-    # Initialize ML recommendation engine on startup
+    # Auto-create database tables on startup
     with app.app_context():
+        # Import all models so SQLAlchemy knows about them
+        from app.models import user, movie  # noqa
+        db.create_all()
+        print("  Database tables ready")
+
+        # Initialize ML engine (non-fatal if it fails)
         try:
             from app.ml import recommendation_engine
             recommendation_engine.load_ratings_data()
-            print("✅ Recommendation engine initialized")
+            print("  ML recommendation engine loaded")
         except Exception as e:
-            print(f"⚠️  Could not initialize recommendation engine: {e}")
+            print(f"  ML engine skipped (will work after first ratings): {e}")
 
-    print(f"🎬 CineMate application started successfully!")
-    
+    print("  CineMate application initialized!")
     return app
 
 
-# Import models for migration context
-from app import models
+from app import models  # noqa

@@ -1,224 +1,311 @@
-/**
- * CineMate — Interactive UI Engine
- * Netflix-level interactivity for the movie platform
- */
+/* ============================================
+   CineMate — Interactive JavaScript
+   ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
   initSearch();
   initUserDropdown();
-  initModal();
-  initToastAutoHide();
+  initHeroRotation();
+  initRatingStars();
+  initMovieRowScroll();
+  initIntersectionAnimations();
 });
 
-/* ===== NAVBAR SCROLL EFFECT ===== */
+/* ---------- Navbar Scroll Effect ---------- */
 function initNavbar() {
-  const nav = document.getElementById('navbar');
+  const nav = document.querySelector('.navbar');
   if (!nav) return;
   const onScroll = () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
+    const scrolled = window.scrollY > 50;
+    nav.classList.toggle('scrolled', scrolled);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 }
 
-/* ===== LIVE SEARCH ===== */
+/* ---------- Search ---------- */
 function initSearch() {
   const input = document.getElementById('searchInput');
   const dropdown = document.getElementById('searchDropdown');
   if (!input || !dropdown) return;
 
-  let timer;
+  let timer = null;
+
   input.addEventListener('input', () => {
     clearTimeout(timer);
     const q = input.value.trim();
-    if (q.length < 2) { dropdown.classList.remove('show'); return; }
+    if (q.length < 2) { dropdown.classList.remove('active'); return; }
     timer = setTimeout(() => fetchSearch(q, dropdown), 350);
   });
 
-  // Close on outside click
+  input.addEventListener('focus', () => {
+    if (dropdown.children.length > 0 && input.value.trim().length >= 2)
+      dropdown.classList.add('active');
+  });
+
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.nav-search')) dropdown.classList.remove('show');
+    if (!e.target.closest('.nav-search'))
+      dropdown.classList.remove('active');
   });
 }
 
-async function fetchSearch(query, dropdown) {
+async function fetchSearch(q, dropdown) {
   try {
-    const r = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const data = await r.json();
-    const results = data.results || [];
-    if (!results.length) {
-      dropdown.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:var(--fs-sm)">No results found</div>';
-      dropdown.classList.add('show');
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const movies = data.results || data || [];
+
+    if (!movies.length) {
+      dropdown.innerHTML = '<div style="padding:16px;color:var(--text-muted);text-align:center;">No results found</div>';
+      dropdown.classList.add('active');
       return;
     }
-    dropdown.innerHTML = results.slice(0, 8).map(m => `
-      <a href="/movie/${m.id}" class="sr-item">
-        <img src="${m.poster_path ? 'https://image.tmdb.org/t/p/w92' + m.poster_path : ''}" 
-             alt="${m.title}" onerror="this.style.display='none'">
-        <div class="sr-info">
-          <h4>${m.title}</h4>
-          <span>${m.release_date ? m.release_date.substring(0,4) : ''} ${m.vote_average ? '· ★ ' + m.vote_average.toFixed(1) : ''}</span>
+
+    dropdown.innerHTML = movies.slice(0, 8).map(m => {
+      const isTv = m.media_type === 'tv';
+      const url = isTv ? `/tv/${m.id}` : `/movie/${m.id}`;
+      const poster = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w92' + m.poster_path : '');
+      const title = m.title || m.name || '';
+      const date = (m.release_date || m.first_air_date || '').slice(0,4);
+      const badge = isTv ? '<span style="font-size:0.6rem;padding:1px 5px;background:#8b5cf6;color:#fff;border-radius:3px;margin-left:4px;">TV</span>' : '';
+      return `
+      <a href="${url}" class="search-result-item">
+        <img src="${poster}" alt="" style="width:40px;height:60px;border-radius:4px;object-fit:cover;flex-shrink:0;">
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;">${title}${badge}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">${date} ${m.vote_average ? '★ ' + m.vote_average.toFixed(1) : ''}</div>
         </div>
-      </a>
-    `).join('');
-    dropdown.classList.add('show');
+      </a>`;
+    }).join('');
+    dropdown.classList.add('active');
   } catch (e) {
-    console.error('Search failed:', e);
+    console.error('Search error:', e);
   }
 }
 
-/* ===== USER DROPDOWN ===== */
+/* ---------- User Dropdown ---------- */
 function initUserDropdown() {
-  const btn = document.getElementById('avatarBtn');
-  const dd = document.getElementById('userDropdown');
-  if (!btn || !dd) return;
+  const toggle = document.getElementById('avatarBtn');
+  const menu = document.getElementById('userDropdown');
+  if (!toggle || !menu) return;
 
-  btn.addEventListener('click', (e) => {
+  toggle.addEventListener('click', (e) => {
     e.stopPropagation();
-    dd.classList.toggle('show');
+    menu.classList.toggle('active');
   });
-  document.addEventListener('click', () => dd.classList.remove('show'));
+
+  document.addEventListener('click', () => menu.classList.remove('active'));
 }
 
-/* ===== MOVIE ROW SCROLLING ===== */
-function scrollRow(arrow, direction) {
-  const row = arrow.parentElement.querySelector('.movie-row-inner');
-  if (!row) return;
-  const scrollAmt = row.clientWidth * 0.75;
-  row.scrollBy({ left: direction * scrollAmt, behavior: 'smooth' });
-}
+/* ---------- Hero Auto-Rotation ---------- */
+function initHeroRotation() {
+  const hero = document.getElementById('heroSection');
+  if (!hero) return;
+  const slides = hero.querySelectorAll('.hero-slide');
+  const dots = hero.querySelectorAll('.hero-dot');
+  if (slides.length <= 1) return;
 
-/* ===== WATCHLIST ===== */
-async function addToWatchlist(movieId) {
-  try {
-    const r = await fetch(`/api/watchlist/add/${movieId}`, { method: 'POST' });
-    const data = await r.json();
-    if (r.ok) {
-      showToast('Added to your watchlist!', 'success');
-      const btn = document.getElementById('wlBtn');
-      if (btn) { btn.innerHTML = '✓ In Watchlist'; }
-    } else {
-      showToast(data.error || 'Please sign in first', 'error');
-    }
-  } catch {
-    showToast('Could not update watchlist', 'error');
+  let current = 0;
+  let interval;
+
+  function goTo(idx) {
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = idx % slides.length;
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
   }
-}
 
-async function removeFromWatchlist(movieId) {
-  try {
-    const r = await fetch(`/api/watchlist/remove/${movieId}`, { method: 'POST' });
-    if (r.ok) {
-      showToast('Removed from watchlist', 'info');
-      const btn = document.getElementById('wlBtn');
-      if (btn) { btn.innerHTML = '+ Add to Watchlist'; }
-    }
-  } catch {
-    showToast('Could not update watchlist', 'error');
+  function next() { goTo(current + 1); }
+
+  function startAuto() {
+    clearInterval(interval);
+    interval = setInterval(next, 5000);
   }
-}
 
-function removeFromWatchlistCard(el, movieId) {
-  removeFromWatchlist(movieId).then(() => {
-    const card = el.closest('.wl-item');
-    if (card) { card.style.opacity = '0'; card.style.transform = 'scale(0.95)'; setTimeout(() => card.remove(), 300); }
-  });
-}
-
-/* ===== RATING ===== */
-async function rateMovie(tmdbId, rating) {
-  try {
-    const r = await fetch(`/api/rate/${tmdbId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rating })
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      goTo(parseInt(dot.dataset.index));
+      startAuto();
     });
-    if (r.ok) {
-      showToast(`Rated ${rating}/10 ⭐`, 'success');
-      // Update star visuals
-      document.querySelectorAll(`.star-rating[data-tmdb="${tmdbId}"] .star`).forEach(s => {
-        s.classList.toggle('active', parseInt(s.dataset.value) <= rating);
+  });
+
+  startAuto();
+
+  // Pause on hover
+  hero.addEventListener('mouseenter', () => clearInterval(interval));
+  hero.addEventListener('mouseleave', startAuto);
+}
+
+/* ---------- Rating Stars ---------- */
+function initRatingStars() {
+  const widget = document.querySelector('.rating-widget');
+  if (!widget) return;
+  const tmdbId = widget.dataset.tmdb;
+  const stars = widget.querySelectorAll('.rating-star');
+  const label = document.getElementById('ratingLabel');
+
+  stars.forEach(star => {
+    star.addEventListener('click', async () => {
+      const val = parseFloat(star.dataset.value);
+      try {
+        const res = await fetch('/api/rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tmdb_id: parseInt(tmdbId), rating: val })
+        });
+        const data = await res.json();
+        if (data.success !== false) {
+          stars.forEach(s => {
+            s.classList.toggle('active', parseFloat(s.dataset.value) <= val);
+          });
+          if (label) label.textContent = val + '/5';
+          showToast('Rating saved!', 'success');
+        } else {
+          showToast(data.error || 'Failed to save rating', 'error');
+        }
+      } catch (e) {
+        showToast('Network error', 'error');
+      }
+    });
+
+    star.addEventListener('mouseenter', () => {
+      const val = parseFloat(star.dataset.value);
+      stars.forEach(s => {
+        s.style.opacity = parseFloat(s.dataset.value) <= val ? '1' : '0.3';
       });
-    } else {
-      showToast('Please sign in to rate', 'error');
-    }
-  } catch {
-    showToast('Could not save rating', 'error');
-  }
+    });
+  });
+
+  widget.addEventListener('mouseleave', () => {
+    stars.forEach(s => s.style.opacity = '');
+  });
 }
 
-/* ===== REVIEW ===== */
-async function submitReview(movieId) {
-  const title = document.getElementById('reviewTitle')?.value;
-  const content = document.getElementById('reviewContent')?.value;
-  const isSpoiler = document.getElementById('isSpoiler')?.checked || false;
-
-  if (!content || content.trim().length < 10) {
-    showToast('Please write at least 10 characters', 'error');
-    return;
-  }
-
+/* ---------- Watchlist ---------- */
+async function toggleWatchlist(movieId, isInWatchlist) {
+  const endpoint = isInWatchlist ? '/api/watchlist/remove' : '/api/watchlist/add';
   try {
-    const r = await fetch(`/api/review/${movieId}`, {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, content, is_spoiler: isSpoiler })
+      body: JSON.stringify({ tmdb_id: movieId })
     });
-    if (r.ok) {
-      showToast('Review submitted!', 'success');
-      document.getElementById('reviewTitle').value = '';
-      document.getElementById('reviewContent').value = '';
+    const data = await res.json();
+    if (data.success !== false) {
+      const btn = document.getElementById('watchlistBtn');
+      if (btn) {
+        const nowIn = !isInWatchlist;
+        btn.onclick = () => toggleWatchlist(movieId, nowIn);
+        const svg = btn.querySelector('svg');
+        if (svg) svg.setAttribute('fill', nowIn ? 'currentColor' : 'none');
+        btn.childNodes[btn.childNodes.length - 1].textContent = nowIn ? ' In Watchlist' : ' Add to Watchlist';
+      }
+      showToast(isInWatchlist ? 'Removed from watchlist' : 'Added to watchlist!', 'success');
     } else {
-      showToast('Could not submit review', 'error');
+      showToast(data.error || 'Failed', 'error');
     }
-  } catch {
-    showToast('Could not submit review', 'error');
+  } catch (e) {
+    showToast('Network error', 'error');
   }
 }
 
-/* ===== MODAL ===== */
-function initModal() {
-  const overlay = document.getElementById('modalOverlay');
-  const close = document.getElementById('modalClose');
-  const content = document.getElementById('modalContent');
-  if (!overlay) return;
-
-  const closeModal = () => {
-    overlay.classList.remove('show');
-    if (content) content.innerHTML = '';
-  };
-
-  if (close) close.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
-  });
+async function removeFromWatchlist(tmdbId, btnEl) {
+  try {
+    const res = await fetch('/api/watchlist/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tmdb_id: tmdbId })
+    });
+    const data = await res.json();
+    if (data.success !== false) {
+      const card = btnEl.closest('.movie-card');
+      if (card) {
+        card.style.transition = 'opacity .3s, transform .3s';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
+        setTimeout(() => card.remove(), 300);
+      }
+      showToast('Removed from watchlist', 'success');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
 }
 
-function openTrailer(key) {
-  const overlay = document.getElementById('modalOverlay');
-  const content = document.getElementById('modalContent');
-  if (!overlay || !content) return;
-  content.innerHTML = `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  overlay.classList.add('show');
+/* ---------- Trailer Modal ---------- */
+function playTrailer(youtubeKey) {
+  const modal = document.getElementById('trailerModal');
+  const iframe = document.getElementById('trailerFrame');
+  if (!modal || !iframe) return;
+  iframe.src = `https://www.youtube.com/embed/${youtubeKey}?autoplay=1&rel=0`;
+  modal.classList.add('active');
 }
 
-/* ===== TOASTS ===== */
+function closeTrailerModal() {
+  const modal = document.getElementById('trailerModal');
+  const iframe = document.getElementById('trailerFrame');
+  if (modal) modal.classList.remove('active');
+  if (iframe) iframe.src = '';
+}
+
+// Close modal on backdrop click or close button
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'trailerModal') closeTrailerModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeTrailerModal();
+});
+const modalCloseBtn = document.getElementById('modalClose');
+if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeTrailerModal);
+
+/* ---------- Toast Notifications ---------- */
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  toast.className = `toast toast-${type}`;
   toast.textContent = message;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
-function initToastAutoHide() {
-  document.querySelectorAll('.toast').forEach(t => {
-    setTimeout(() => t.remove(), 4000);
+/* ---------- Movie Row Horizontal Scroll ---------- */
+function initMovieRowScroll() {
+  document.querySelectorAll('.movie-row').forEach(row => {
+    let isDown = false, startX, scrollLeft;
+    row.addEventListener('mousedown', (e) => {
+      isDown = true; startX = e.pageX - row.offsetLeft; scrollLeft = row.scrollLeft;
+      row.style.cursor = 'grabbing';
+    });
+    row.addEventListener('mouseleave', () => { isDown = false; row.style.cursor = 'grab'; });
+    row.addEventListener('mouseup', () => { isDown = false; row.style.cursor = 'grab'; });
+    row.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - row.offsetLeft;
+      row.scrollLeft = scrollLeft - (x - startX) * 1.5;
+    });
+  });
+}
+
+/* ---------- Intersection Observer Animations ---------- */
+function initIntersectionAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.animate-fade-up, .movie-section').forEach(el => {
+    observer.observe(el);
   });
 }

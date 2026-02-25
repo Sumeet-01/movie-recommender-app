@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script>document.addEventListener('DOMContentLoaded',()=>{const n=document.getElementById('navbar');if(n)n.classList.add('navbar-transparent');});</script>
+{% endblock %}
+
+{% block content %}
+<!-- DETAIL HERO -->
+<section class="detail-hero">
+  <div class="detail-hero-bg" style="background-image: url('{{ show.backdrop_url or '' }}')"></div>
+  <div class="detail-content">
+    <div class="detail-poster">
+      {% if show.poster_url %}
+      <img src="{{ show.poster_url }}" alt="{{ show.title }}">
+      {% else %}
+      <div class="no-poster" style="height:420px;">📺</div>
+      {% endif %}
+    </div>
+    <div class="detail-info">
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <span class="media-badge media-badge-tv" style="position:static;">TV SERIES</span>
+        {% if show.status %}
+        <span style="font-size:0.8rem; padding:4px 12px; border-radius:var(--radius-full); background:rgba(34,197,94,0.2); color:#22c55e;">{{ show.status }}</span>
+        {% endif %}
+      </div>
+      <h1 class="detail-title">{{ show.title }}</h1>
+      {% if show.tagline %}
+      <p class="detail-tagline">"{{ show.tagline }}"</p>
+      {% endif %}
+      <div class="detail-meta">
+        <span><span class="star-big">★</span> {{ '%.1f'|format(show.vote_average or 0) }}/10</span>
+        <span>{{ show.vote_count or 0 }} votes</span>
+        {% if show.number_of_seasons %}<span>{{ show.number_of_seasons }} Season{{ 's' if show.number_of_seasons != 1 }}</span>{% endif %}
+        {% if show.number_of_episodes %}<span>{{ show.number_of_episodes }} Episodes</span>{% endif %}
+        {% if show.release_date %}<span>{{ show.release_date }}</span>{% endif %}
+      </div>
+      <div class="detail-genres">
+        {% for g in show.genres or [] %}
+        <span class="detail-genre-tag">{{ g.name }}</span>
+        {% endfor %}
+      </div>
+
+      <!-- OTT Providers -->
+      {% if ott_providers %}
+      <div class="ott-providers">
+        <span class="ott-label">Stream on</span>
+        {% for p in ott_providers %}
+        <span class="ott-badge" style="background: {{ p.color }}; color: white;">
+          {% if p.logo %}
+          <img src="{{ p.logo }}" alt="{{ p.name }}" class="ott-logo">
+          {% endif %}
+          {{ p.name }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if show.overview %}
+      <p class="detail-overview">{{ show.overview }}</p>
+      {% endif %}
+      <div class="detail-actions">
+        {% if trailers %}
+        <button class="btn btn-primary" onclick="playTrailer('{{ trailers[0].key }}')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Watch Trailer
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="detail-body">
+
+  <!-- Seasons -->
+  {% if show.seasons %}
+  <div class="detail-section">
+    <h3 class="detail-section-title">📺 Seasons</h3>
+    <div class="movie-row">
+      {% for season in show.seasons %}
+      {% if season.season_number > 0 %}
+      <div style="flex-shrink:0; width:160px; text-align:center;">
+        {% if season.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w342{{ season.poster_path }}" alt="Season {{ season.season_number }}" style="border-radius:var(--radius); width:100%;">
+        {% else %}
+        <div class="no-poster" style="height:240px; border-radius:var(--radius);">📺</div>
+        {% endif %}
+        <div style="font-weight:600; margin-top:8px; font-size:0.9rem;">Season {{ season.season_number }}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">{{ season.episode_count }} episodes</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Cast -->
+  {% set credits = show.get('credits', {}) %}
+  {% set cast = credits.get('cast', [])[:15] %}
+  {% if cast %}
+  <div class="detail-section">
+    <h3 class="detail-section-title">🎭 Cast</h3>
+    <div class="cast-grid stagger">
+      {% for person in cast %}
+      <div class="cast-card animate-fade-up">
+        {% if person.profile_path %}
+        <img src="https://image.tmdb.org/t/p/w185{{ person.profile_path }}" alt="{{ person.name }}">
+        {% else %}
+        <img src="https://via.placeholder.com/100x100.png?text={{ person.name[0] }}" alt="{{ person.name }}">
+        {% endif %}
+        <div class="cast-name">{{ person.name }}</div>
+        <div class="cast-char">{{ person.character }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Trailers -->
+  {% if trailers %}
+  <div class="detail-section">
+    <h3 class="detail-section-title">🎬 Trailers & Videos</h3>
+    <div class="movie-row">
+      {% for v in trailers %}
+      <div style="flex-shrink:0; width:320px; cursor:pointer;" onclick="playTrailer('{{ v.key }}')">
+        <div style="position:relative; border-radius: var(--radius); overflow: hidden;">
+          <img src="https://img.youtube.com/vi/{{ v.key }}/hqdefault.jpg" alt="{{ v.name }}" style="width:100%; border-radius: var(--radius);">
+          <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3);">
+            <div style="width:48px; height:48px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="white" width="20" height="20"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.85rem; margin-top:8px; font-weight:500;">{{ v.name }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Similar Shows -->
+  {% if similar_shows %}
+  <div class="detail-section">
+    <h3 class="detail-section-title">🎯 Similar Shows</h3>
+    <div class="movie-row stagger">
+      {% for m in similar_shows %}
+      <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="movie-card animate-fade-up">
+        <div class="movie-card-poster">
+          {% if m.poster_url %}
+          <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+          {% else %}
+          <div class="no-poster">📺</div>
+          {% endif %}
+          <div class="card-rating">
+            <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+          </div>
+          <span class="media-badge media-badge-tv">TV</span>
+        </div>
+        <div class="movie-card-info">
+          <div class="movie-card-title">{{ m.title }}</div>
+          <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Show Info -->
+  <div class="detail-section">
+    <h3 class="detail-section-title">📊 Show Info</h3>
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">
+      {% if show.first_air_date %}
+      <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius); border:1px solid var(--border);">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">First Aired</div>
+        <div style="font-size:1.1rem; font-weight:700; margin-top:4px;">{{ show.first_air_date }}</div>
+      </div>
+      {% endif %}
+      {% if show.last_air_date %}
+      <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius); border:1px solid var(--border);">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Last Aired</div>
+        <div style="font-size:1.1rem; font-weight:700; margin-top:4px;">{{ show.last_air_date }}</div>
+      </div>
+      {% endif %}
+      {% if show.original_language %}
+      <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius); border:1px solid var(--border);">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Language</div>
+        <div style="font-size:1.1rem; font-weight:700; margin-top:4px;">{{ show.original_language|upper }}</div>
+      </div>
+      {% endif %}
+      {% if show.popularity %}
+      <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius); border:1px solid var(--border);">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Popularity</div>
+        <div style="font-size:1.1rem; font-weight:700; margin-top:4px;">{{ '%.1f'|format(show.popularity) }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,41 +1,46 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block content %}
+<section class="page-hero" style="--page-accent: {{ accent or '#e50914' }};">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">🎭 {{ genre_name }}</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">Explore {{ genre_name }} movies</p>
+  </div>
+</section>
 
-<div class="page-header container">
-  <h1>{{ genre_name }} Movies</h1>
-  <p>Browse the best films in the {{ genre_name }} genre.</p>
-</div>
-
-<div class="container">
+<div class="container" style="padding: 32px 5%;">
   {% if movies %}
-  <div class="movie-grid">
+  <div class="movie-grid stagger">
     {% for m in movies %}
-    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
-      <div class="poster">
-        {% if m.poster_path %}
-        <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
-        {% else %}
-        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
-        {% endif %}
-        <div class="ov">
-          <span class="score">
-            <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-            {{ "%.1f"|format(m.vote_average) }}
-          </span>
+    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="movie-card animate-fade-up">
+      {% if m.poster_url %}
+      <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+      {% else %}
+      <div class="no-poster">🎬</div>
+      {% endif %}
+      <div class="card-rating">★ {{ '%.1f'|format(m.vote_average or 0) }}</div>
+      <div class="card-overlay">
+        <div class="card-genres">
+          {% for g in (m.genre_names or '')[:3] if g %}
+          <span class="card-genre-tag">{{ g }}</span>
+          {% endfor %}
         </div>
+        <div class="card-play">▶</div>
       </div>
-      <p class="c-title">{{ m.title }}</p>
-      <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+      <div class="card-info">
+        <h4 class="card-title">{{ m.title }}</h4>
+        <span class="card-year">{{ m.release_date[:4] if m.release_date else '' }}</span>
+      </div>
     </a>
     {% endfor %}
   </div>
   {% else %}
   <div class="empty-state">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
-    <h2>No movies found</h2>
-    <p>We couldn't find any {{ genre_name }} movies.</p>
+    <div class="empty-icon">🎭</div>
+    <h3>No {{ genre_name }} Movies</h3>
+    <p>Try exploring another genre.</p>
+    <a href="{{ url_for('main.discover') }}" class="btn btn-primary">Discover Movies</a>
   </div>
   {% endif %}
 </div>
-
 {% endblock %}

@@ -1,55 +1,36 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block content %}
-
-<div class="container" style="max-width:900px">
-  <div class="page-header" style="padding-left:0;text-align:center">
-    <h1>Features</h1>
-    <p>Everything you need for the ultimate movie experience.</p>
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">✨ Features</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">Everything CineMate offers</p>
   </div>
+</section>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-xl);padding:var(--sp-xl) 0">
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🤖</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">AI Recommendations</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Hybrid ML engine combining collaborative and content-based filtering for uniquely personalized suggestions.</p>
+<div class="container" style="padding: 40px 5%; max-width: 1000px; margin: 0 auto;">
+  <div class="movie-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:24px;">
+    {% set features = [
+      ('🤖', 'Smart Recommendations', 'Hybrid ML engine using collaborative filtering (Pearson correlation) and content-based (Jaccard similarity) algorithms.'),
+      ('🎬', 'Vast Movie Database', 'Access to thousands of movies powered by TMDb with real-time data, ratings, and trailers.'),
+      ('🇮🇳', 'Bollywood Collection', 'Dedicated section for Hindi cinema with trending and top-rated Bollywood films.'),
+      ('🌏', 'South Indian Cinema', 'Tamil, Telugu, Malayalam, and Kannada movies in dedicated regional sections.'),
+      ('🇺🇸', 'Hollywood Blockbusters', 'Latest and greatest from English-language cinema worldwide.'),
+      ('🇰🇷', 'Korean Movies', 'K-dramas and Korean cinema that has taken the world by storm.'),
+      ('🎌', 'Anime Films', 'Japanese animated masterpieces from studios like Ghibli and more.'),
+      ('🔍', 'Smart Discovery', 'Filter by genre, year, language, rating, and more to find exactly what you want.'),
+      ('📊', 'Rate & Review', 'Share your opinions and help others discover great movies.'),
+      ('🔖', 'Personal Watchlist', 'Save movies you want to watch and never forget a recommendation.'),
+      ('🎥', 'Watch Trailers', 'Preview movies with embedded YouTube trailers.'),
+      ('📱', 'Responsive Design', 'Beautiful experience on any device — desktop, tablet, or phone.')
+    ] %}
+    {% for icon, title, desc in features %}
+    <div class="animate-fade-up" style="background:var(--bg-card); padding:28px; border-radius:var(--radius); border:1px solid var(--border); animation-delay:{{ loop.index0 * 0.05 }}s;">
+      <div style="font-size:2.5rem; margin-bottom:12px;">{{ icon }}</div>
+      <h3 style="margin-bottom:8px;">{{ title }}</h3>
+      <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6;">{{ desc }}</p>
     </div>
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">📚</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Massive Database</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Access over 800,000 movies with detailed information, cast, crew, trailers, and reviews.</p>
-    </div>
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">📋</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Custom Lists</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Create and manage watchlists, favorites, and themed collections to organize your movie journey.</p>
-    </div>
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">⭐</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Rate & Review</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Share your opinions with detailed ratings and reviews. Your ratings improve your recommendations.</p>
-    </div>
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🔍</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Advanced Discovery</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Filter by genre, year, rating, and more. Explore trending, popular, and top-rated collections.</p>
-    </div>
-
-    <div class="stat-card" style="text-align:left;padding:var(--sp-2xl)">
-      <div style="font-size:var(--fs-2xl);margin-bottom:var(--sp-md)">🎬</div>
-      <h3 style="font-size:var(--fs-lg);color:var(--white);margin-bottom:var(--sp-sm)">Watch Trailers</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text3);line-height:1.5">Watch trailers and teasers directly within the app without leaving the page.</p>
-    </div>
-
-  </div>
-
-  <div style="text-align:center;padding:var(--sp-3xl) 0">
-    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg">Get Started Free</a>
+    {% endfor %}
   </div>
 </div>
-
 {% endblock %}

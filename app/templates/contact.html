@@ -1,41 +1,33 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block content %}
-
-<div class="container" style="max-width:600px">
-  <div class="page-header" style="padding-left:0;text-align:center">
-    <h1>Contact Us</h1>
-    <p>Have a question or feedback? We'd love to hear from you.</p>
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">📬 Contact Us</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">We'd love to hear from you</p>
   </div>
+</section>
 
-  <div class="auth-card" style="max-width:100%">
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" placeholder="Your name" {% if current_user.is_authenticated %}value="{{ current_user.username }}"{% endif %}>
+<div class="container" style="padding: 40px 5%; max-width: 600px; margin: 0 auto;">
+  <div class="auth-card animate-fade-up" style="max-width:none;">
+    <p style="color:var(--text-muted); margin-bottom:24px;">Have a question, feedback, or feature request? Reach out to us through any of the channels below.</p>
+    
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div style="background:var(--bg-secondary); padding:20px; border-radius:var(--radius); display:flex; align-items:center; gap:16px;">
+        <span style="font-size:1.5rem;">📧</span>
+        <div>
+          <div style="font-weight:600;">Email</div>
+          <div style="color:var(--text-muted); font-size:0.9rem;">support@cinemate.app</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-secondary); padding:20px; border-radius:var(--radius); display:flex; align-items:center; gap:16px;">
+        <span style="font-size:1.5rem;">🐙</span>
+        <div>
+          <div style="font-weight:600;">GitHub</div>
+          <a href="https://github.com/Sumeet-01/movie-recommender-app" target="_blank" style="color:var(--accent); font-size:0.9rem;">github.com/Sumeet-01/movie-recommender-app</a>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" placeholder="you@example.com" {% if current_user.is_authenticated %}value="{{ current_user.email }}"{% endif %}>
-    </div>
-    <div class="form-group">
-      <label>Subject</label>
-      <select class="filter-select" style="width:100%">
-        <option>General Inquiry</option>
-        <option>Bug Report</option>
-        <option>Feature Request</option>
-        <option>Partnership</option>
-        <option>Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Message</label>
-      <textarea rows="5" placeholder="Tell us what's on your mind..." style="resize:vertical"></textarea>
-    </div>
-    <button class="btn-submit" onclick="showToast('Message sent! We\'ll get back to you soon.', 'success')">Send Message</button>
-  </div>
-
-  <div style="text-align:center;padding:var(--sp-3xl) 0;color:var(--text3);font-size:var(--fs-sm)">
-    <p>You can also reach us at <strong style="color:var(--white)">support@cinemate.app</strong></p>
   </div>
 </div>
-
 {% endblock %}

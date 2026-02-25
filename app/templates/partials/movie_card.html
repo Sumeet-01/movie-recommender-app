@@ -1,0 +1,31 @@
+<a href="{% if m.media_type == 'tv' %}{{ url_for('main.tv_details', tv_id=m.id) }}{% else %}{{ url_for('main.movie_details', tmdb_id=m.id) }}{% endif %}" class="movie-card animate-fade-up">
+  <div class="movie-card-poster">
+    {% if m.poster_url %}
+    <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+    {% else %}
+    <div class="no-poster">🎬</div>
+    {% endif %}
+    <div class="card-rating">
+      <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+    </div>
+    {% if m.media_type == 'tv' %}
+    <span class="media-badge media-badge-tv">TV</span>
+    {% endif %}
+    <div class="movie-card-overlay">
+      {% if m.genre_names %}
+      <div class="genre-tags">
+        {% for g in m.genre_names[:2] %}
+        <span class="genre-tag">{{ g }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="movie-card-play">
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </div>
+  </div>
+  <div class="movie-card-info">
+    <div class="movie-card-title">{{ m.title }}</div>
+    <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+  </div>
+</a>

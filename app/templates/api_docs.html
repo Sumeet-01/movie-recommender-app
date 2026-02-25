@@ -1,67 +1,34 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block content %}
-
-<div class="container" style="max-width:800px">
-  <div class="page-header" style="padding-left:0">
-    <h1>API Documentation</h1>
-    <p>CineMate REST API endpoints for developers.</p>
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">📡 API Documentation</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">CineMate REST API endpoints</p>
   </div>
+</section>
 
-  <div style="font-size:var(--fs-sm);color:var(--text2);line-height:1.8">
+<div class="container" style="padding: 40px 5%; max-width: 900px; margin: 0 auto;">
+  {% set endpoints = [
+    ('GET', '/api/search?q=term', 'Search movies by title', 'Returns matching movies from TMDb.'),
+    ('POST', '/api/watchlist/add', 'Add to watchlist', 'Body: { tmdb_id: int }. Requires authentication.'),
+    ('POST', '/api/watchlist/remove', 'Remove from watchlist', 'Body: { tmdb_id: int }. Requires authentication.'),
+    ('POST', '/api/rate', 'Rate a movie', 'Body: { tmdb_id: int, rating: float }. Requires authentication.'),
+    ('POST', '/api/review', 'Submit a review', 'Body: { tmdb_id: int, title: str, content: str }. Requires authentication.'),
+    ('GET', '/api/stats', 'User stats', 'Returns ratings count, watchlist count, reviews count. Requires authentication.'),
+    ('GET', '/api/recommendations', 'Get AI recommendations', 'Returns personalized movie recommendations. Requires authentication.'),
+    ('GET', '/api/health', 'Health check', 'Returns server status and TMDB API connectivity.')
+  ] %}
 
-    <div class="settings-section">
-      <h2>Search Movies</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--green);font-weight:600">GET</span> /api/search?q={query}
-      </div>
-      <p>Search for movies by title. Returns a list of matching results with poster paths, ratings, and release dates.</p>
-      <p style="margin-top:var(--sp-sm);color:var(--text3)">Rate limited: 30 requests / 60 seconds</p>
+  {% for method, path, title, desc in endpoints %}
+  <div class="auth-card animate-fade-up" style="max-width:none; margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <span style="background:{{ '#10b981' if method == 'GET' else '#f59e0b' }}; color:#000; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-weight:700;">{{ method }}</span>
+      <code style="color:var(--accent); font-size:0.9rem;">{{ path }}</code>
     </div>
-
-    <div class="settings-section">
-      <h2>Watchlist</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--gold);font-weight:600">POST</span> /api/watchlist/add/{movie_id}
-      </div>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--accent);font-weight:600">POST</span> /api/watchlist/remove/{movie_id}
-      </div>
-      <p>Add or remove a movie from your watchlist. Requires authentication.</p>
-    </div>
-
-    <div class="settings-section">
-      <h2>Rate a Movie</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--gold);font-weight:600">POST</span> /api/rate/{tmdb_id}
-      </div>
-      <p>Rate a movie on a 1-10 scale. Send JSON body: <code style="background:var(--bg-input);padding:2px 6px;border-radius:var(--r-sm)">{"rating": 8}</code></p>
-    </div>
-
-    <div class="settings-section">
-      <h2>Submit Review</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--gold);font-weight:600">POST</span> /api/review/{movie_id}
-      </div>
-      <p>Submit a review for a movie. JSON body: <code style="background:var(--bg-input);padding:2px 6px;border-radius:var(--r-sm)">{"title": "...", "content": "...", "rating": 8, "is_spoiler": false}</code></p>
-    </div>
-
-    <div class="settings-section">
-      <h2>Recommendations</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--green);font-weight:600">GET</span> /api/recommendations?n={count}
-      </div>
-      <p>Get AI-powered personalized movie recommendations. Requires authentication. Default returns 20 results.</p>
-    </div>
-
-    <div class="settings-section">
-      <h2>User Statistics</h2>
-      <div style="background:var(--bg-input);padding:var(--sp-md);border-radius:var(--r-md);font-family:monospace;margin-bottom:var(--sp-md)">
-        <span style="color:var(--green);font-weight:600">GET</span> /api/stats
-      </div>
-      <p>Get your account statistics including total ratings, reviews, watchlist count, and favorite genres.</p>
-    </div>
-
+    <h4 style="margin:0 0 4px;">{{ title }}</h4>
+    <p style="color:var(--text-muted); margin:0; font-size:0.9rem;">{{ desc }}</p>
   </div>
+  {% endfor %}
 </div>
-
 {% endblock %}

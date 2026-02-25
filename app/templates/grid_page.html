@@ -1,19 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="page-hero">
+<section class="page-hero" style="{% if accent %}--page-accent: {{ accent }};{% endif %}">
   <div class="page-hero-inner">
-    <h1 class="page-hero-title animate-fade-up">🔥 Trending Movies</h1>
-    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">What everyone's watching {{ 'this week' if time_window == 'week' else 'today' }}</p>
+    <h1 class="page-hero-title animate-fade-up">{{ title }}</h1>
+    {% if subtitle %}
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">{{ subtitle }}</p>
+    {% endif %}
   </div>
 </section>
 
-<div class="container" style="padding: 32px 5%;">
-  <div class="category-pills" style="margin-bottom:24px;">
-    <a href="{{ url_for('main.trending', time_window='day') }}" class="category-pill {% if time_window == 'day' %}active{% endif %}">Today</a>
-    <a href="{{ url_for('main.trending', time_window='week') }}" class="category-pill {% if time_window == 'week' %}active{% endif %}">This Week</a>
-  </div>
-
+<div class="container" style="padding: 40px 5%;">
   {% if movies %}
   <div class="movie-grid stagger">
     {% for m in movies %}
@@ -41,9 +38,10 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-icon">🔥</div>
-    <h3>No Trending Movies</h3>
-    <p>Check back soon for trending content!</p>
+    <div class="empty-icon">🎬</div>
+    <h3>No Movies Found</h3>
+    <p>We couldn't find any movies in this category right now. Try again later!</p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Back to Home</a>
   </div>
   {% endif %}
 </div>

@@ -1,82 +1,96 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">🔍 Discover Movies</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">Find your next favorite movie with powerful filters</p>
+  </div>
+</section>
 
-<div class="page-header container">
-  <h1>Discover Movies</h1>
-  <p>Explore movies with advanced filters and sorting.</p>
-</div>
-
-{# Filters #}
-<div class="filters-bar container">
-  <form method="GET" action="{{ url_for('main.discover') }}" style="display:flex;gap:var(--sp-md);flex-wrap:wrap;align-items:center;width:100%">
-    <select name="genre" class="filter-select">
-      <option value="">All Genres</option>
-      {% for g in genres %}
-      <option value="{{ g.id }}" {% if current_filters.get('with_genres')|string == g.id|string %}selected{% endif %}>{{ g.name }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="sort_by" class="filter-select">
-      <option value="popularity.desc" {% if current_filters.sort_by == 'popularity.desc' %}selected{% endif %}>Most Popular</option>
-      <option value="vote_average.desc" {% if current_filters.sort_by == 'vote_average.desc' %}selected{% endif %}>Highest Rated</option>
-      <option value="release_date.desc" {% if current_filters.sort_by == 'release_date.desc' %}selected{% endif %}>Newest First</option>
-      <option value="revenue.desc" {% if current_filters.sort_by == 'revenue.desc' %}selected{% endif %}>Highest Grossing</option>
-    </select>
-
-    <select name="year" class="filter-select">
-      <option value="">Any Year</option>
-      {% for y in range(2025, 1979, -1) %}
-      <option value="{{ y }}" {% if current_filters.get('year')|string == y|string %}selected{% endif %}>{{ y }}</option>
-      {% endfor %}
-    </select>
-
-    <button type="submit" class="btn btn-accent btn-sm">Apply Filters</button>
-    <a href="{{ url_for('main.discover') }}" class="btn btn-ghost btn-sm">Reset</a>
+<div class="container" style="padding: 32px 5%;">
+  <!-- Filters -->
+  <form class="filters-bar animate-fade-up" method="GET" action="{{ url_for('main.discover') }}">
+    <div class="filter-group">
+      <label>Genre</label>
+      <select name="genre" class="filter-select">
+        <option value="">All Genres</option>
+        {% for g in genres %}
+        <option value="{{ g.id }}" {% if current_filters.genre == g.id|string %}selected{% endif %}>{{ g.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Year</label>
+      <input type="number" name="year" class="filter-input" placeholder="e.g. 2024" min="1900" max="2030" value="{{ current_filters.year or '' }}">
+    </div>
+    <div class="filter-group">
+      <label>Sort By</label>
+      <select name="sort" class="filter-select">
+        <option value="popularity.desc" {% if current_filters.sort|default('popularity.desc') == 'popularity.desc' %}selected{% endif %}>Popularity</option>
+        <option value="vote_average.desc" {% if current_filters.sort == 'vote_average.desc' %}selected{% endif %}>Rating</option>
+        <option value="primary_release_date.desc" {% if current_filters.sort == 'primary_release_date.desc' %}selected{% endif %}>Release Date</option>
+        <option value="revenue.desc" {% if current_filters.sort == 'revenue.desc' %}selected{% endif %}>Revenue</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Language</label>
+      <select name="language" class="filter-select">
+        <option value="">All</option>
+        <option value="en" {% if current_filters.language == 'en' %}selected{% endif %}>English</option>
+        <option value="hi" {% if current_filters.language == 'hi' %}selected{% endif %}>Hindi</option>
+        <option value="ta" {% if current_filters.language == 'ta' %}selected{% endif %}>Tamil</option>
+        <option value="te" {% if current_filters.language == 'te' %}selected{% endif %}>Telugu</option>
+        <option value="ml" {% if current_filters.language == 'ml' %}selected{% endif %}>Malayalam</option>
+        <option value="kn" {% if current_filters.language == 'kn' %}selected{% endif %}>Kannada</option>
+        <option value="ko" {% if current_filters.language == 'ko' %}selected{% endif %}>Korean</option>
+        <option value="ja" {% if current_filters.language == 'ja' %}selected{% endif %}>Japanese</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Min Rating</label>
+      <select name="min_rating" class="filter-select">
+        <option value="">Any</option>
+        {% for r in [5,6,7,8,9] %}
+        <option value="{{ r }}" {% if current_filters.min_rating == r|string %}selected{% endif %}>{{ r }}+</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Apply Filters</button>
   </form>
-</div>
 
-{# Genre Pills #}
-{% if genres %}
-<div class="genre-row">
-  <a href="{{ url_for('main.discover') }}" class="genre-pill {% if not current_filters.get('with_genres') %}active{% endif %}">All</a>
-  {% for g in genres %}
-  <a href="{{ url_for('main.discover', genre=g.id, sort_by=current_filters.sort_by) }}" class="genre-pill {% if current_filters.get('with_genres')|string == g.id|string %}active{% endif %}">{{ g.name }}</a>
-  {% endfor %}
-</div>
-{% endif %}
-
-{# Movies Grid #}
-<div class="container">
+  <!-- Results -->
   {% if movies %}
-  <div class="movie-grid">
+  <div class="movie-grid stagger" style="margin-top:32px;">
     {% for m in movies %}
-    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="card-s">
-      <div class="poster">
-        {% if m.poster_path %}
-        <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
-        {% else %}
-        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-card);color:var(--text3);font-size:var(--fs-xl)">🎬</div>
-        {% endif %}
-        <div class="ov">
-          <span class="score">
-            <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-            {{ "%.1f"|format(m.vote_average) }}
-          </span>
+    <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="movie-card animate-fade-up">
+      {% if m.poster_url %}
+      <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+      {% else %}
+      <div class="no-poster">🎬</div>
+      {% endif %}
+      <div class="card-rating">★ {{ '%.1f'|format(m.vote_average or 0) }}</div>
+      <div class="card-overlay">
+        <div class="card-genres">
+          {% for g in (m.genre_names or '')[:3] if g %}
+          <span class="card-genre-tag">{{ g }}</span>
+          {% endfor %}
         </div>
+        <div class="card-play">▶</div>
       </div>
-      <p class="c-title">{{ m.title }}</p>
-      <p class="c-year">{{ m.release_date[:4] if m.release_date else '' }}</p>
+      <div class="card-info">
+        <h4 class="card-title">{{ m.title }}</h4>
+        <span class="card-year">{{ m.release_date[:4] if m.release_date else '' }}</span>
+      </div>
     </a>
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <h2>No movies found</h2>
-    <p>Try adjusting your filters or search criteria.</p>
-    <a href="{{ url_for('main.discover') }}" class="btn btn-accent">Reset Filters</a>
+  <div class="empty-state" style="margin-top:48px;">
+    <div class="empty-icon">🔍</div>
+    <h3>No Results Found</h3>
+    <p>Try adjusting your filters to find more movies.</p>
   </div>
   {% endif %}
 </div>
-
 {% endblock %}

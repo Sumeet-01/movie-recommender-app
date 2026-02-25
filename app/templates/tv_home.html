@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title animate-fade-up">📺 TV Series</h1>
+    <p class="page-hero-subtitle animate-fade-up" style="animation-delay:.1s;">Discover trending shows, Indian originals, and global hits</p>
+  </div>
+</section>
+
+<div style="max-width:1440px; margin:0 auto; padding:0 40px;">
+
+<!-- TRENDING TV -->
+{% if trending_tv %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(239,68,68,0.2);">🔥</span>
+      Trending TV Series
+    </div>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in trending_tv %}
+    <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="movie-card animate-fade-up">
+      <div class="movie-card-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">📺</div>
+        {% endif %}
+        <div class="card-rating">
+          <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+        </div>
+        <span class="media-badge media-badge-tv">TV</span>
+        <div class="movie-card-overlay">
+          {% if m.genre_names %}
+          <div class="genre-tags">
+            {% for g in m.genre_names[:2] %}
+            <span class="genre-tag">{{ g }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="movie-card-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">{{ m.title }}</div>
+        <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- POPULAR TV -->
+{% if popular_tv %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(245,158,11,0.2);">⭐</span>
+      Popular TV Series
+    </div>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in popular_tv %}
+    <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="movie-card animate-fade-up">
+      <div class="movie-card-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">📺</div>
+        {% endif %}
+        <div class="card-rating">
+          <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+        </div>
+        <span class="media-badge media-badge-tv">TV</span>
+        <div class="movie-card-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">{{ m.title }}</div>
+        <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- TOP RATED TV -->
+{% if top_rated_tv %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(34,197,94,0.2);">🏆</span>
+      Top Rated Shows
+    </div>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in top_rated_tv %}
+    <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="movie-card animate-fade-up">
+      <div class="movie-card-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">📺</div>
+        {% endif %}
+        <div class="card-rating">
+          <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+        </div>
+        <span class="media-badge media-badge-tv">TV</span>
+        <div class="movie-card-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">{{ m.title }}</div>
+        <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- INDIAN TV -->
+{% if indian_tv %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(255,107,53,0.2);">🇮🇳</span>
+      Indian TV Shows
+    </div>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in indian_tv %}
+    <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="movie-card animate-fade-up">
+      <div class="movie-card-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">📺</div>
+        {% endif %}
+        <div class="card-rating">
+          <span class="star">★</span> {{ '%.1f'|format(m.vote_average or 0) }}
+        </div>
+        <span class="media-badge media-badge-tv">TV</span>
+        <div class="movie-card-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">{{ m.title }}</div>
+        <div class="movie-card-year">{{ (m.release_date or '')[:4] }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+</div>
+{% endblock %}

@@ -1,27 +1,34 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends 'base.html' %}
 
+{% block content %}
 <div class="auth-page">
-  <div class="auth-card slide-up">
-    <h1>Welcome back</h1>
-    <p class="subtitle">Sign in to your CineMate account</p>
+  <div class="auth-card animate-fade-up">
+    <h2 class="auth-title">Welcome Back</h2>
+    <p style="color:var(--text-muted); text-align:center; margin-bottom:24px;">Sign in to your CineMate account</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}" style="margin-bottom:16px;">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 
     <form method="POST" action="{{ url_for('auth.login') }}">
       <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-input" placeholder="Your username" required autofocus>
       </div>
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required>
       </div>
-      <button type="submit" class="btn-submit">Sign In</button>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">Sign In</button>
     </form>
 
-    <p class="auth-footer">
-      Don't have an account? <a href="{{ url_for('auth.register') }}">Create one</a>
+    <p style="text-align:center; margin-top:20px; color:var(--text-muted);">
+      Don't have an account? <a href="{{ url_for('auth.register') }}" style="color:var(--accent); font-weight:600;">Sign Up</a>
     </p>
   </div>
 </div>
-
 {% endblock %}

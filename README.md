@@ -19,29 +19,45 @@
 
 ## ✨ Features
 
-### 🧠 **Machine Learning Powered**
-- **Hybrid Recommendation Engine**: Combines collaborative filtering and content-based algorithms
-- **Personalized Suggestions**: Learns from your ratings and viewing patterns
-- **Similar Movies**: Intelligent similarity detection based on multiple factors
-- **Trending Analysis**: Real-time trending detection with ML scoring
+### 🇮🇳 **India-First Platform (v3 🎉)**
+- **Bollywood-First Bias**: Prioritizes Hindi cinema with TF-IDF + collaborative hybrid scoring
+- **South Indian Cinema**: Tamil, Telugu, Malayalam, Kannada with language detection
+- **Netflix-Style Top 10**: Numbered sections for India Top 10 + Series Top 10 daily
+- **OTT Integration**: Netflix, Prime, Hotstar, JioCinema, Zee5, SonyLIV provider badges
+- **Multi-Search**: Search movies AND TV series with media type auto-detection
+- **Auto-Rotating Hero**: 5-slide fade transitions on homepage (5 trending movies)
 
-### 🎨 **Modern User Experience**
-- **Beautiful Dark/Light Theme**: Customizable, eye-friendly interface
-- **Responsive Design**: Perfect experience on all devices
-- **Smooth Animations**: Polished interactions and transitions
-- **Infinite Scroll**: Seamless content loading
-- **Advanced Search**: Real-time search with autocomplete
-- **Keyboard Shortcuts**: Power user friendly
+### 📺 **TV Series Support (NEW)**
+- **Complete TV Integration**: Browse, search, get recommendations for TV series
+- **Series Details**: Seasons, episodes, air dates, cast, trailers, OTT providers
+- **Trending TV Section**: Dedicated trending shows on homepage
+- **Top 10 Series**: Netflix-style numbered Top 10 shows
+
+### 🧠 **Machine Learning Powered**
+- **Hybrid Engine**: TF-IDF (overview+genres+keywords+cast+director) + Pearson collaborative + Bollywood bias
+- **Recency Decay**: 2026 films→1.0, 10+ years→0.2 score multiplier
+- **Bayesian Rating**: Smart handling of low-vote movies (IMDB formula)
+- **Smart Scoring**: 35% similarity + 20% genre match + 15% recency + 10% rating weight + bonuses
+- **Similar Movies**: Intelligent detection by genre, cast, director, language
+- **Trending Analysis**: Real-time with director/cast/language bonuses
+
+### 🎨 **Netflix-Grade UI**
+- **Beautiful Dark Theme**: Premium UI with glass-morphism effects
+- **Responsive Design**: Perfect on mobile, tablet, desktop
+- **Smooth Animations**: Fade-in-up, scale-in, slide transitions throughout
+- **Advanced Multi-Search**: Real-time with TV series badges
+- **Numbered Top 10 Cards**: Netflix-style numbered posters with drop shadows
+- **OTT Badges**: Color-coded logos (Netflix red, Prime blue, Hotstar navy)
+- **Media Badges**: Purple TV badges distinguish series from movies
 
 ### 📊 **Advanced Features**
 - **User Profiles**: Detailed statistics and activity tracking
-- **Custom Lists**: Create and share your own movie collections
-- **Reviews & Ratings**: Half-star rating system with full reviews
-- **Social Features**: Like reviews, follow users, share lists
-- **Watchlist Management**: Organize movies you want to watch
-- **Activity Feed**: Track your movie journey
-- **Analytics Dashboard**: Insights into your watching habits
-- **Genre Exploration**: Browse by genre with advanced filters
+- **Custom Lists**: Create and share movie/series collections
+- **Reviews & Ratings**: Half-star system (0-5) with spoiler tags
+- **Watchlist Management**: Organize movies & shows to watch
+- **Genre Exploration**: Browse 19+ genres with advanced filters
+- **Discover Page**: Filter by year, language, rating; sort by popularity/rating/date
+- **Zero Console Errors**: Clean startup with warning suppression, auto __pycache__ cleanup
 
 ### 🏗️ **Enterprise Architecture**
 - **Repository Pattern**: Clean separation of concerns
@@ -420,12 +436,36 @@ See [API_DOCS.md](docs/API_DOCS.md) for complete API documentation.
 
 ## 🛠️ Built With
 
-- **[Flask](https://flask.palletsprojects.com/)** - Web framework
-- **[SQLAlchemy](https://www.sqlalchemy.org/)** - ORM
-- **[Flask-Login](https://flask-login.readthedocs.io/)** - User authentication
-- **[TMDB API](https://www.themoviedb.org/documentation/api)** - Movie data
-- **NumPy** - Numerical computing for ML
-- **Vanilla JavaScript** - Frontend interactivity
+**Backend Stack:**
+- **Flask** 3.1.2 - Lightweight web framework
+- **SQLAlchemy** 2.0.43 - ORM for database models
+- **Flask-Login** 0.6.3 - Session & user authentication
+- **Flask-Migrate** 4.0.5 - Database migration management
+- **Flask-Limiter** 3.5.0 - Rate limiting for APIs
+- **Gunicorn** 21.2.0 - Production WSGI server
+
+**AI/ML Engine:**
+- **scikit-learn** 1.3.2 - TF-IDF, similarity metrics, Bayesian rating formula
+- **pandas** 2.1.3 - Data manipulation & aggregation
+- **numpy** 1.24.3 - Numerical computations
+
+**Frontend:**
+- **Jinja2** (Flask templating) - Dynamic HTML rendering
+- **Vanilla JavaScript** (273 lines) - Hero rotation, multi-search, hero indicators
+- **CSS3** (790 lines) - Dark theme, animations, Netflix-style Top 10 cards
+
+**External APIs:**
+- **TMDB API v3** (free tier) - Movie/TV metadata, ratings, OTT providers, trailers, images
+
+**Database:**
+- **SQLite** 3.x - Local development & production database
+- **Alembic** - Schema migration tool
+
+**DevOps & Deployment:**
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Git/GitHub** - Version control
+- **Python venv** - Dependency isolation (3.11+)
 
 ---
 
@@ -438,18 +478,30 @@ See [API_DOCS.md](docs/API_DOCS.md) for complete API documentation.
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap (v3 Complete ✅)
 
-- [ ] Add TV shows support
-- [ ] Implement Redis caching
-- [ ] Add social features (following, activity feed)
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] Email notifications
-- [ ] Multi-language support
-- [ ] GraphQL API
-- [ ] Real-time updates with WebSockets
-- [ ] Serverless deployment option
+### ✅ v3 Released (Feb 2026)
+- [x] **TV Series Support**: Full TMDB TV API integration with series details, seasons, cast
+- [x] **Netflix-Style Top 10**: Numbered cards for India Top 10 + Top 10 Series daily
+- [x] **OTT Integration**: Netflix, Prime, Hotstar, JioCinema, Zee5, SonyLIV with provider badges
+- [x] **Hero Auto-Rotation**: 5-second fade transitions between trending movies
+- [x] **Bollywood Bias**: TF-IDF + collaborative hybrid engine with India-first ranking
+- [x] **Multi-Search**: Unified search for movies & TV with media type badges
+- [x] **Production Ready**: Zero warnings, __pycache__ cleaner, Bearer token auth, retry logic
+- [x] **39 Complete Routes**: All pages + 15 API endpoints tested & verified
+- [x] **Trailers & Director**: YouTube trailers + director credits on detail pages
+
+### 🔮 Future (v4+)
+- [ ] Redis caching (10x performance boost)
+- [ ] Social features (user following, friend recommendations, activity feed)
+- [ ] Mobile app (React Native/Flutter)
+- [ ] Advanced analytics (watch time heatmaps, genre preference charts)
+- [ ] Email notifications (new releases, watchlist reminders)
+- [ ] Multi-language UI (Hindi, Tamil, Telugu, Malayalam)
+- [ ] GraphQL API alongside REST
+- [ ] WebSocket real-time updates
+- [ ] Kubernetes deployment manifests
+- [ ] AI-powered banner generation per user
 
 ---
 

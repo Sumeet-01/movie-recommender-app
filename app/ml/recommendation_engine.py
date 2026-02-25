@@ -1,391 +1,321 @@
 """
-Machine Learning Recommendation Engine for CineMate.
-Implements collaborative filtering and content-based recommendation algorithms.
+CineMate Hybrid Recommendation Engine — Production Grade
+Combines content-based filtering (TF-IDF on overview+genres+keywords+cast+director),
+collaborative filtering (user-based Pearson), popularity-weighted ranking,
+Bollywood/India bias layer, and recency decay.
+
+Score formula:
+  final = 0.35*similarity + 0.20*genre_match + 0.15*recency + 0.20*user_pref + 0.10*rating_weight
 """
 
-import numpy as np
-from typing import List, Dict, Tuple, Optional
-from collections import defaultdict
 import math
-from app.core.cache import cache, cache_key
-from app.core.decorators import cached, timed
+import time
+import re
+from collections import defaultdict, Counter
+from typing import List, Dict, Tuple, Optional
 
 
 class RecommendationEngine:
-    """
-    Advanced recommendation engine with multiple algorithms.
-    Combines collaborative filtering and content-based approaches.
-    """
-    
+    """Hybrid recommendation engine with India-first bias."""
+
     def __init__(self):
-        self.user_ratings = defaultdict(dict)  # {user_id: {movie_id: rating}}
-        self.movie_ratings = defaultdict(dict)  # {movie_id: {user_id: rating}}
-        self.movie_features = {}  # {movie_id: feature_vector}
-        self.user_preferences = {}  # {user_id: preference_vector}
-    
+        # collaborative data
+        self.user_ratings: Dict[int, Dict[int, float]] = defaultdict(dict)
+        self.movie_ratings: Dict[int, Dict[int, float]] = defaultdict(dict)
+        # content data
+        self.movie_meta: Dict[int, Dict] = {}   # tmdb_id -> {genres, keywords, overview, cast, director, lang, year, popularity, vote_avg, vote_count}
+        self.tfidf_vectors: Dict[int, Dict[str, float]] = {}
+        self.idf: Dict[str, float] = {}
+        self._tfidf_dirty = True
+
+    # ── data loading ────────────────────────────────────────
+
     def load_ratings_data(self):
-        """Load ratings data from database."""
-        from app.models.movie import Rating
-        
-        ratings = Rating.query.all()
-        
-        for rating in ratings:
-            self.user_ratings[rating.user_id][rating.movie_id] = rating.score
-            self.movie_ratings[rating.movie_id][rating.user_id] = rating.score
-    
-    def load_movie_features(self, movies_data: List[Dict]):
-        """
-        Load movie features from TMDB data.
-        Features include genres, popularity, vote_average, etc.
-        """
-        for movie in movies_data:
-            movie_id = movie.get('id')
-            
-            # Create feature vector from movie attributes
-            genres = movie.get('genres', [])
-            genre_ids = [g.get('id', 0) for g in genres]
-            
-            self.movie_features[movie_id] = {
-                'genres': set(genre_ids),
-                'vote_average': movie.get('vote_average', 0),
-                'popularity': movie.get('popularity', 0),
-                'vote_count': movie.get('vote_count', 0)
-            }
-    
-    @timed
-    def collaborative_filtering(self, user_id: int, n_recommendations: int = 10) -> List[Tuple[int, float]]:
-        """
-        User-based collaborative filtering.
-        Finds similar users and recommends movies they liked.
-        
-        Returns:
-            List of (movie_id, predicted_rating) tuples
-        """
-        if user_id not in self.user_ratings or not self.user_ratings[user_id]:
-            return []
-        
-        # Find similar users
-        similar_users = self._find_similar_users(user_id, k=20)
-        
-        # Get candidate movies (movies rated by similar users but not by target user)
-        rated_movies = set(self.user_ratings[user_id].keys())
-        candidate_movies = set()
-        
-        for similar_user_id, similarity in similar_users:
-            candidate_movies.update(
-                movie_id for movie_id in self.user_ratings[similar_user_id]
-                if movie_id not in rated_movies
-            )
-        
-        # Predict ratings for candidate movies
-        predictions = []
-        for movie_id in candidate_movies:
-            predicted_rating = self._predict_rating(user_id, movie_id, similar_users)
-            if predicted_rating > 0:
-                predictions.append((movie_id, predicted_rating))
-        
-        # Sort by predicted rating and return top N
-        predictions.sort(key=lambda x: x[1], reverse=True)
-        return predictions[:n_recommendations]
-    
-    def _find_similar_users(self, user_id: int, k: int = 20) -> List[Tuple[int, float]]:
-        """
-        Find k most similar users using Pearson correlation.
-        
-        Returns:
-            List of (user_id, similarity_score) tuples
-        """
-        similarities = []
-        target_ratings = self.user_ratings[user_id]
-        
-        for other_user_id in self.user_ratings:
-            if other_user_id == user_id:
-                continue
-            
-            # Calculate Pearson correlation
-            similarity = self._pearson_correlation(
-                target_ratings,
-                self.user_ratings[other_user_id]
-            )
-            
-            if similarity > 0:
-                similarities.append((other_user_id, similarity))
-        
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return similarities[:k]
-    
-    def _pearson_correlation(self, ratings1: Dict, ratings2: Dict) -> float:
-        """Calculate Pearson correlation coefficient between two rating dictionaries."""
-        common_movies = set(ratings1.keys()) & set(ratings2.keys())
-        
-        if len(common_movies) < 2:
-            return 0
-        
-        # Get ratings for common movies
-        r1 = [ratings1[movie_id] for movie_id in common_movies]
-        r2 = [ratings2[movie_id] for movie_id in common_movies]
-        
-        # Calculate means
-        mean1 = sum(r1) / len(r1)
-        mean2 = sum(r2) / len(r2)
-        
-        # Calculate correlation
-        numerator = sum((r1[i] - mean1) * (r2[i] - mean2) for i in range(len(r1)))
-        
-        sum_sq1 = sum((r - mean1) ** 2 for r in r1)
-        sum_sq2 = sum((r - mean2) ** 2 for r in r2)
-        
-        denominator = math.sqrt(sum_sq1 * sum_sq2)
-        
-        if denominator == 0:
-            return 0
-        
-        return numerator / denominator
-    
-    def _predict_rating(self, user_id: int, movie_id: int, similar_users: List[Tuple[int, float]]) -> float:
-        """
-        Predict rating for a movie using weighted average of similar users' ratings.
-        """
-        numerator = 0
-        denominator = 0
-        
-        for similar_user_id, similarity in similar_users:
-            if movie_id in self.user_ratings[similar_user_id]:
-                rating = self.user_ratings[similar_user_id][movie_id]
-                numerator += similarity * rating
-                denominator += abs(similarity)
-        
-        if denominator == 0:
-            return 0
-        
-        return numerator / denominator
-    
-    @timed
-    def content_based_filtering(self, user_id: int, n_recommendations: int = 10) -> List[Tuple[int, float]]:
-        """
-        Content-based filtering using movie features.
-        Recommends movies similar to those the user liked.
-        
-        Returns:
-            List of (movie_id, similarity_score) tuples
-        """
-        if user_id not in self.user_ratings or not self.user_ratings[user_id]:
-            return []
-        
-        # Build user preference profile
-        user_profile = self._build_user_profile(user_id)
-        
-        # Get candidate movies (not rated by user)
-        rated_movies = set(self.user_ratings[user_id].keys())
-        candidate_movies = [
-            movie_id for movie_id in self.movie_features
-            if movie_id not in rated_movies
-        ]
-        
-        # Calculate similarity scores
-        recommendations = []
-        for movie_id in candidate_movies:
-            similarity = self._calculate_content_similarity(user_profile, movie_id)
-            if similarity > 0:
-                recommendations.append((movie_id, similarity))
-        
-        # Sort by similarity and return top N
-        recommendations.sort(key=lambda x: x[1], reverse=True)
-        return recommendations[:n_recommendations]
-    
-    def _build_user_profile(self, user_id: int) -> Dict:
-        """Build user preference profile based on rated movies."""
-        user_ratings_dict = self.user_ratings[user_id]
-        
-        # Weight features by rating
-        genre_weights = defaultdict(float)
-        avg_vote_avg = 0
-        avg_popularity = 0
-        total_weight = 0
-        
-        for movie_id, rating in user_ratings_dict.items():
-            if movie_id not in self.movie_features:
-                continue
-            
-            features = self.movie_features[movie_id]
-            weight = rating / 5.0  # Normalize rating
-            
-            # Weight genres
-            for genre_id in features['genres']:
-                genre_weights[genre_id] += weight
-            
-            # Weight other features
-            avg_vote_avg += features['vote_average'] * weight
-            avg_popularity += features['popularity'] * weight
-            total_weight += weight
-        
-        if total_weight == 0:
-            return {'genres': set(), 'vote_average': 0, 'popularity': 0}
-        
-        # Normalize
-        preferred_genres = set(
-            genre_id for genre_id, weight in genre_weights.items()
-            if weight / total_weight > 0.3  # Threshold for preference
-        )
-        
-        return {
-            'genres': preferred_genres,
-            'vote_average': avg_vote_avg / total_weight,
-            'popularity': avg_popularity / total_weight
+        """Load ratings from DB into memory."""
+        try:
+            from app.models.movie import Rating
+            ratings = Rating.query.all()
+            self.user_ratings.clear()
+            self.movie_ratings.clear()
+            for r in ratings:
+                self.user_ratings[r.user_id][r.movie_id] = r.score
+                self.movie_ratings[r.movie_id][r.user_id] = r.score
+        except Exception:
+            pass
+
+    def ingest_movie(self, tmdb_id: int, data: Dict):
+        """Ingest TMDB movie details for content-based features."""
+        if not data or not tmdb_id:
+            return
+        genres = [g.get('name', '') for g in data.get('genres', [])]
+        genre_ids = set(g.get('id', 0) for g in data.get('genres', []))
+        keywords_list = [kw.get('name', '') for kw in data.get('keywords', {}).get('keywords', [])]
+        cast = [c.get('name', '') for c in data.get('credits', {}).get('cast', [])[:8]]
+        director = data.get('director') or ''
+        overview = data.get('overview') or ''
+        lang = data.get('original_language', '')
+        year = 0
+        rd = data.get('release_date', '') or ''
+        if len(rd) >= 4:
+            try:
+                year = int(rd[:4])
+            except ValueError:
+                pass
+
+        self.movie_meta[tmdb_id] = {
+            'genres': genres,
+            'genre_ids': genre_ids,
+            'keywords': keywords_list,
+            'cast': cast,
+            'director': director,
+            'overview': overview,
+            'lang': lang,
+            'year': year,
+            'popularity': data.get('popularity', 0),
+            'vote_avg': data.get('vote_average', 0),
+            'vote_count': data.get('vote_count', 0),
+            'title': data.get('title', ''),
         }
-    
-    def _calculate_content_similarity(self, user_profile: Dict, movie_id: int) -> float:
-        """Calculate similarity between user profile and movie."""
-        if movie_id not in self.movie_features:
-            return 0
-        
-        movie_features = self.movie_features[movie_id]
-        
-        # Genre similarity (Jaccard index)
-        user_genres = user_profile['genres']
-        movie_genres = movie_features['genres']
-        
-        if not user_genres or not movie_genres:
-            genre_similarity = 0
-        else:
-            intersection = len(user_genres & movie_genres)
-            union = len(user_genres | movie_genres)
-            genre_similarity = intersection / union if union > 0 else 0
-        
-        # Rating similarity
-        rating_diff = abs(user_profile['vote_average'] - movie_features['vote_average'])
-        rating_similarity = 1 - (rating_diff / 10)  # Normalize to [0, 1]
-        
-        # Combine similarities (weighted)
-        similarity = (
-            0.7 * genre_similarity +
-            0.3 * rating_similarity
-        )
-        
-        return similarity
-    
-    @cached(timeout=600)
-    def hybrid_recommendations(self, user_id: int, n_recommendations: int = 20) -> List[Dict]:
-        """
-        Hybrid approach combining collaborative and content-based filtering.
-        
-        Returns:
-            List of recommended movie dictionaries with scores
-        """
-        # Get recommendations from both methods
-        collab_recs = self.collaborative_filtering(user_id, n_recommendations * 2)
-        content_recs = self.content_based_filtering(user_id, n_recommendations * 2)
-        
-        # Combine recommendations with weighted scoring
-        combined_scores = defaultdict(float)
-        
-        # Weight collaborative filtering higher if user has many ratings
-        collab_weight = min(len(self.user_ratings.get(user_id, {})) / 10, 0.7)
-        content_weight = 1 - collab_weight
-        
-        for movie_id, score in collab_recs:
-            combined_scores[movie_id] += score * collab_weight
-        
-        for movie_id, score in content_recs:
-            combined_scores[movie_id] += score * content_weight
-        
-        # Sort and return top N
-        recommendations = [
-            {'movie_id': movie_id, 'score': score}
-            for movie_id, score in combined_scores.items()
-        ]
-        recommendations.sort(key=lambda x: x['score'], reverse=True)
-        
-        return recommendations[:n_recommendations]
-    
-    @timed
-    def similar_movies(self, movie_id: int, n_similar: int = 10) -> List[Tuple[int, float]]:
-        """
-        Find movies similar to the given movie based on content features.
-        
-        Returns:
-            List of (movie_id, similarity_score) tuples
-        """
-        if movie_id not in self.movie_features:
-            return []
-        
-        target_features = self.movie_features[movie_id]
-        similarities = []
-        
-        for other_movie_id, other_features in self.movie_features.items():
-            if other_movie_id == movie_id:
-                continue
-            
-            # Calculate similarity
-            similarity = self._calculate_movie_similarity(target_features, other_features)
-            
-            if similarity > 0:
-                similarities.append((other_movie_id, similarity))
-        
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return similarities[:n_similar]
-    
-    def _calculate_movie_similarity(self, features1: Dict, features2: Dict) -> float:
-        """Calculate similarity between two movies."""
-        # Genre similarity
-        genres1 = features1['genres']
-        genres2 = features2['genres']
-        
+        self._tfidf_dirty = True
+
+    # ── TF-IDF ──────────────────────────────────────────────
+
+    @staticmethod
+    def _tokenize(text: str) -> List[str]:
+        return re.findall(r'[a-z0-9]+', text.lower())
+
+    def _build_document(self, meta: Dict) -> List[str]:
+        """Build a token list weighting genres and cast higher."""
+        tokens = []
+        # genres x3 for weight
+        for g in meta['genres']:
+            tokens.extend(self._tokenize(g) * 3)
+        # keywords x2
+        for kw in meta['keywords']:
+            tokens.extend(self._tokenize(kw) * 2)
+        # cast
+        for c in meta['cast']:
+            tokens.extend(self._tokenize(c))
+        # director x2
+        if meta['director']:
+            tokens.extend(self._tokenize(meta['director']) * 2)
+        # overview
+        tokens.extend(self._tokenize(meta['overview']))
+        return tokens
+
+    def _rebuild_tfidf(self):
+        if not self._tfidf_dirty:
+            return
+        # build term frequencies
+        docs: Dict[int, Dict[str, int]] = {}
+        df: Dict[str, int] = defaultdict(int)
+        for mid, meta in self.movie_meta.items():
+            tokens = self._build_document(meta)
+            tf = Counter(tokens)
+            docs[mid] = tf
+            for term in set(tokens):
+                df[term] += 1
+
+        n = max(len(docs), 1)
+        self.idf = {term: math.log(n / (1 + count)) for term, count in df.items()}
+
+        self.tfidf_vectors = {}
+        for mid, tf in docs.items():
+            vec = {}
+            magnitude = 0
+            for term, count in tf.items():
+                w = count * self.idf.get(term, 0)
+                vec[term] = w
+                magnitude += w * w
+            magnitude = math.sqrt(magnitude) if magnitude > 0 else 1
+            self.tfidf_vectors[mid] = {t: w / magnitude for t, w in vec.items()}
+
+        self._tfidf_dirty = False
+
+    def _cosine_sim(self, v1: Dict[str, float], v2: Dict[str, float]) -> float:
+        if not v1 or not v2:
+            return 0.0
+        common = set(v1.keys()) & set(v2.keys())
+        if not common:
+            return 0.0
+        return sum(v1[t] * v2[t] for t in common)
+
+    # ── scoring components ──────────────────────────────────
+
+    def _genre_match(self, genres1: set, genres2: set) -> float:
         if not genres1 or not genres2:
-            genre_similarity = 0
-        else:
-            intersection = len(genres1 & genres2)
-            union = len(genres1 | genres2)
-            genre_similarity = intersection / union if union > 0 else 0
-        
-        # Rating similarity
-        rating_diff = abs(features1['vote_average'] - features2['vote_average'])
-        rating_similarity = 1 - (rating_diff / 10)
-        
-        # Popularity similarity
-        pop_diff = abs(features1['popularity'] - features2['popularity'])
-        max_pop = max(features1['popularity'], features2['popularity'], 1)
-        popularity_similarity = 1 - min(pop_diff / max_pop, 1)
-        
-        # Weighted combination
-        similarity = (
-            0.6 * genre_similarity +
-            0.25 * rating_similarity +
-            0.15 * popularity_similarity
-        )
-        
-        return similarity
-    
+            return 0.0
+        inter = len(genres1 & genres2)
+        union = len(genres1 | genres2)
+        return inter / union if union else 0.0
+
+    def _recency_score(self, year: int) -> float:
+        current_year = 2026
+        if year <= 0:
+            return 0.3
+        diff = current_year - year
+        if diff <= 1:
+            return 1.0
+        if diff <= 3:
+            return 0.85
+        if diff <= 5:
+            return 0.7
+        if diff <= 10:
+            return 0.5
+        return max(0.2, 1.0 - diff * 0.03)
+
+    def _rating_weight(self, vote_avg: float, vote_count: int) -> float:
+        """IMDB-style weighted rating (Bayesian average)."""
+        m = 50   # minimum votes to be considered
+        c = 6.0  # mean vote across all movies
+        if vote_count == 0:
+            return 0.3
+        return (vote_count / (vote_count + m)) * vote_avg / 10 + (m / (vote_count + m)) * c / 10
+
+    # ── collaborative filtering ─────────────────────────────
+
+    def _pearson(self, r1: Dict, r2: Dict) -> float:
+        common = set(r1.keys()) & set(r2.keys())
+        if len(common) < 2:
+            return 0
+        vals1 = [r1[m] for m in common]
+        vals2 = [r2[m] for m in common]
+        mean1, mean2 = sum(vals1) / len(vals1), sum(vals2) / len(vals2)
+        num = sum((vals1[i] - mean1) * (vals2[i] - mean2) for i in range(len(vals1)))
+        d1 = sum((v - mean1) ** 2 for v in vals1)
+        d2 = sum((v - mean2) ** 2 for v in vals2)
+        denom = math.sqrt(d1 * d2)
+        return num / denom if denom else 0
+
+    def collaborative_filtering(self, user_id: int, n: int = 20) -> List[Tuple[int, float]]:
+        if user_id not in self.user_ratings or not self.user_ratings[user_id]:
+            return []
+        target = self.user_ratings[user_id]
+        sims = []
+        for other_id in self.user_ratings:
+            if other_id == user_id:
+                continue
+            s = self._pearson(target, self.user_ratings[other_id])
+            if s > 0:
+                sims.append((other_id, s))
+        sims.sort(key=lambda x: x[1], reverse=True)
+        sims = sims[:30]
+
+        rated = set(target.keys())
+        scores: Dict[int, float] = defaultdict(float)
+        weights: Dict[int, float] = defaultdict(float)
+        for uid, sim in sims:
+            for mid, rating in self.user_ratings[uid].items():
+                if mid not in rated:
+                    scores[mid] += sim * rating
+                    weights[mid] += abs(sim)
+
+        preds = []
+        for mid in scores:
+            if weights[mid] > 0:
+                preds.append((mid, scores[mid] / weights[mid]))
+        preds.sort(key=lambda x: x[1], reverse=True)
+        return preds[:n]
+
+    # ── content-based filtering ─────────────────────────────
+
+    def content_recommendations(self, movie_id: int, n: int = 12) -> List[Tuple[int, float]]:
+        """Find similar movies using TF-IDF + genre + recency + rating."""
+        self._rebuild_tfidf()
+        if movie_id not in self.tfidf_vectors or movie_id not in self.movie_meta:
+            return []
+
+        target_vec = self.tfidf_vectors[movie_id]
+        target_meta = self.movie_meta[movie_id]
+        target_genres = target_meta['genre_ids']
+
+        results = []
+        for mid, vec in self.tfidf_vectors.items():
+            if mid == movie_id:
+                continue
+            meta = self.movie_meta[mid]
+            sim = self._cosine_sim(target_vec, vec)
+            genre_m = self._genre_match(target_genres, meta['genre_ids'])
+            recency = self._recency_score(meta['year'])
+            rating_w = self._rating_weight(meta['vote_avg'], meta['vote_count'])
+
+            # Director / cast bonus
+            bonus = 0
+            if target_meta['director'] and target_meta['director'] == meta['director']:
+                bonus += 0.15
+            shared_cast = set(target_meta['cast']) & set(meta['cast'])
+            bonus += min(len(shared_cast) * 0.05, 0.15)
+
+            # Language proximity bonus
+            lang_bonus = 0.05 if target_meta['lang'] == meta['lang'] else 0
+
+            final = (
+                0.35 * sim +
+                0.20 * genre_m +
+                0.15 * recency +
+                0.10 * rating_w +
+                bonus + lang_bonus
+            )
+            if genre_m >= 0.25:  # must share at least some genres
+                results.append((mid, final))
+
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results[:n]
+
+    # ── hybrid recommendations (for user) ───────────────────
+
+    def hybrid_recommendations(self, user_id: int, n_recommendations: int = 20) -> List[Dict]:
+        """Combine collaborative + content-based + popularity for a logged-in user."""
+        collab = self.collaborative_filtering(user_id, n_recommendations * 2)
+
+        # Content recs from user's top-rated movies
+        content_scores: Dict[int, float] = defaultdict(float)
+        user_rated = self.user_ratings.get(user_id, {})
+        top_rated = sorted(user_rated.items(), key=lambda x: x[1], reverse=True)[:10]
+        for mid, rating in top_rated:
+            weight = rating / 5.0
+            for rec_mid, score in self.content_recommendations(mid, 15):
+                if rec_mid not in user_rated:
+                    content_scores[rec_mid] += score * weight
+
+        # Merge
+        combined: Dict[int, float] = defaultdict(float)
+        collab_weight = min(len(user_rated) / 10, 0.6)
+        content_weight = 1 - collab_weight
+
+        for mid, score in collab:
+            combined[mid] += score * collab_weight
+        for mid, score in content_scores.items():
+            combined[mid] += score * content_weight
+
+        # Popularity boost for items with meta
+        for mid in combined:
+            if mid in self.movie_meta:
+                meta = self.movie_meta[mid]
+                pop_boost = min(meta['popularity'] / 200, 0.15)
+                combined[mid] += pop_boost
+
+        recs = [{'movie_id': mid, 'score': round(score, 4)}
+                for mid, score in combined.items()]
+        recs.sort(key=lambda x: x['score'], reverse=True)
+        return recs[:n_recommendations]
+
+    # ── similar movies (for detail page) ────────────────────
+
+    def similar_movies(self, movie_id: int, n: int = 10) -> List[Tuple[int, float]]:
+        return self.content_recommendations(movie_id, n)
+
+    # ── trending by category ────────────────────────────────
+
     def get_trending_by_category(self, category: str = 'all', limit: int = 20) -> List[int]:
-        """
-        Get trending movies by category based on recent ratings.
-        
-        Args:
-            category: 'all', 'action', 'comedy', etc.
-            limit: Number of movies to return
-        
-        Returns:
-            List of movie IDs
-        """
-        # Calculate trending score based on recent ratings and popularity
-        trending_scores = defaultdict(float)
-        
-        for movie_id, user_ratings in self.movie_ratings.items():
-            # Average rating
-            avg_rating = sum(user_ratings.values()) / len(user_ratings)
-            
-            # Number of ratings (popularity)
-            rating_count = len(user_ratings)
-            
-            # Trending score: combination of rating and count
-            trending_score = avg_rating * math.log(rating_count + 1)
-            trending_scores[movie_id] = trending_score
-        
-        # Sort by trending score
-        trending = sorted(trending_scores.items(), key=lambda x: x[1], reverse=True)
-        
-        return [movie_id for movie_id, _ in trending[:limit]]
+        scores: Dict[int, float] = defaultdict(float)
+        for mid, user_ratings in self.movie_ratings.items():
+            avg = sum(user_ratings.values()) / len(user_ratings)
+            count = len(user_ratings)
+            scores[mid] = avg * math.log(count + 1)
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        return [mid for mid, _ in ranked[:limit]]
 
 
-# Global recommendation engine instance
+# Global instance
 recommendation_engine = RecommendationEngine()

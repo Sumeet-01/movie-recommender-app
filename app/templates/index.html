@@ -1,50 +1,73 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
+{% block head %}
+<script>document.addEventListener('DOMContentLoaded',()=>{const n=document.getElementById('navbar');if(n)n.classList.add('navbar-transparent');});</script>
+{% endblock %}
+
 {% block content %}
 
-{# ===== HERO SECTION ===== #}
-{% if movies %}
-{% set hero = movies[0] %}
-<section class="hero">
-  <div class="hero-bg" style="background-image:url('https://image.tmdb.org/t/p/original{{ hero.backdrop_path }}')"></div>
-  <div class="hero-content container slide-up">
-    <span class="hero-tag">
-      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Trending Now
-    </span>
-    <h1>{{ hero.title }}</h1>
-    <div class="hero-meta">
-      <span class="rating">
-        <svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-        {{ "%.1f"|format(hero.vote_average) }}
-      </span>
-      <span>{{ hero.release_date[:4] if hero.release_date else '' }}</span>
-      {% if hero.original_language %}<span>{{ hero.original_language|upper }}</span>{% endif %}
+<!-- HERO — Auto-rotating featured movies -->
+{% if trending and trending|length > 0 %}
+<section class="hero" id="heroSection">
+  {% for hero in trending[:5] %}
+  <div class="hero-slide {% if loop.index0 == 0 %}active{% endif %}" data-index="{{ loop.index0 }}">
+    <div class="hero-bg" style="background-image: url('{{ hero.backdrop_url or "" }}')"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🔥 #{{ loop.index }} Trending</div>
+      <h1 class="hero-title">{{ hero.title }}</h1>
+      <div class="hero-meta">
+        <span class="star">★</span>
+        <span>{{ '%.1f'|format(hero.vote_average or 0) }}</span>
+        <span>•</span>
+        <span>{{ (hero.release_date or '')[:4] }}</span>
+        {% if hero.genre_names %}
+        <span>•</span>
+        <span>{{ hero.genre_names[:3]|join(', ') }}</span>
+        {% endif %}
+      </div>
+      <p class="hero-overview">{{ hero.overview }}</p>
+      <div class="hero-actions">
+        <a href="{{ url_for('main.movie_details', tmdb_id=hero.id) }}" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          View Details
+        </a>
+        <button class="btn btn-secondary" onclick="addToWatchlist({{ hero.id }})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Watchlist
+        </button>
+      </div>
     </div>
-    <p class="hero-overview">{{ hero.overview }}</p>
-    <div class="hero-actions">
-      <a href="{{ url_for('main.movie_details', tmdb_id=hero.id) }}" class="btn btn-primary btn-lg">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        View Details
-      </a>
-      <button class="btn btn-secondary btn-lg" onclick="addToWatchlist({{ hero.id }})">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        My List
-      </button>
-    </div>
+  </div>
+  {% endfor %}
+  <div class="hero-indicators">
+    {% for m in trending[:5] %}
+    <div class="hero-dot {% if loop.index0 == 0 %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+    {% endfor %}
   </div>
 </section>
 {% endif %}
 
-{# ===== GENRES ROW ===== #}
-{% if genres %}
-<section class="section">
-  <div class="section-header">
-    <h2 class="section-title">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Browse by Genre
-    </h2>
+<!-- CATEGORY NAVIGATION -->
+<section class="section" style="padding-top: 20px; padding-bottom: 0;">
+  <div class="category-pills">
+    <a href="{{ url_for('main.bollywood') }}" class="cat-pill" style="background: rgba(255,107,53,0.15); color: #ff6b35; border-color: rgba(255,107,53,0.3);">🇮🇳 Bollywood</a>
+    <a href="{{ url_for('main.south_indian') }}" class="cat-pill" style="background: rgba(0,201,167,0.15); color: #00c9a7; border-color: rgba(0,201,167,0.3);">🌴 South Indian</a>
+    <a href="{{ url_for('main.hollywood') }}" class="cat-pill" style="background: rgba(155,89,182,0.15); color: #9b59b6; border-color: rgba(155,89,182,0.3);">🎬 Hollywood</a>
+    <a href="{{ url_for('main.korean') }}" class="cat-pill" style="background: rgba(231,76,60,0.15); color: #e74c3c; border-color: rgba(231,76,60,0.3);">🇰🇷 Korean</a>
+    <a href="{{ url_for('main.anime') }}" class="cat-pill" style="background: rgba(233,30,99,0.15); color: #e91e63; border-color: rgba(233,30,99,0.3);">🎌 Anime</a>
+    <a href="{{ url_for('main.tv_home') }}" class="cat-pill" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border-color: rgba(139,92,246,0.3);">📺 TV Series</a>
+    <a href="{{ url_for('main.tamil') }}" class="cat-pill" style="background: rgba(255,217,61,0.15); color: #ffd93d; border-color: rgba(255,217,61,0.3);">🎭 Tamil</a>
+    <a href="{{ url_for('main.telugu') }}" class="cat-pill" style="background: rgba(107,203,119,0.15); color: #6bcb77; border-color: rgba(107,203,119,0.3);">🎥 Telugu</a>
+    <a href="{{ url_for('main.malayalam') }}" class="cat-pill" style="background: rgba(77,150,255,0.15); color: #4d96ff; border-color: rgba(77,150,255,0.3);">🎞️ Malayalam</a>
+    <a href="{{ url_for('main.now_playing') }}" class="cat-pill" style="background: rgba(99,102,241,0.15); color: #6366f1; border-color: rgba(99,102,241,0.3);">🍿 In Theaters</a>
+    <a href="{{ url_for('main.upcoming') }}" class="cat-pill" style="background: rgba(20,184,166,0.15); color: #14b8a6; border-color: rgba(20,184,166,0.3);">📅 Coming Soon</a>
   </div>
-  <div class="genre-row">
+</section>
+
+<!-- GENRE PILLS -->
+{% if genres %}
+<section class="section" style="padding-top: 16px; padding-bottom: 0;">
+  <div class="genre-pills">
     {% for g in genres %}
     <a href="{{ url_for('main.genre', genre_id=g.id) }}" class="genre-pill">{{ g.name }}</a>
     {% endfor %}
@@ -52,155 +75,296 @@
 </section>
 {% endif %}
 
-{# ===== TRENDING ROW ===== #}
-{% if movies %}
-<section class="section">
+<!-- TOP 10 IN INDIA — Netflix style numbered -->
+{% if top10_india %}
+<section class="section animate-fade-up">
   <div class="section-header">
-    <h2 class="section-title">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Trending This Week
-    </h2>
-    <a href="{{ url_for('main.trending') }}" class="section-link">See all →</a>
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(239,68,68,0.2);">🏆</span>
+      Top 10 in India Today
+      <span class="section-badge" style="background: linear-gradient(135deg, #e50914, #b20710);">TOP 10</span>
+    </div>
   </div>
-  <div class="movie-row">
-    <div class="row-arrow row-arrow-left" onclick="scrollRow(this, -1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
-    <div class="movie-row-inner">
-      {% for m in movies %}
-      <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="movie-card">
-        <div class="mc-poster">
-          {% if m.poster_path %}
-          <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
-          {% else %}
-          <div class="placeholder">🎬</div>
-          {% endif %}
-        </div>
-        <div class="mc-detail">
-          <div class="mc-actions">
-            <span class="mc-btn play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></span>
-          </div>
-          <div class="mc-meta">
-            <span class="match">{{ "%.0f"|format(m.vote_average * 10) }}% Match</span>
-            <span>{{ m.release_date[:4] if m.release_date else '' }}</span>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    <div class="row-arrow row-arrow-right" onclick="scrollRow(this, 1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
+  <div class="top10-row">
+    {% for m in top10_india %}
+    <a href="{% if m.media_type == 'tv' %}{{ url_for('main.tv_details', tv_id=m.id) }}{% else %}{{ url_for('main.movie_details', tmdb_id=m.id) }}{% endif %}" class="top10-card">
+      <span class="top10-number">{{ loop.index }}</span>
+      <div class="top10-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">🎬</div>
+        {% endif %}
+        {% if m.media_type == 'tv' %}
+        <span class="media-badge media-badge-tv">TV</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
   </div>
 </section>
 {% endif %}
 
-{# ===== POPULAR ROW ===== #}
-{% if popular_movies %}
-<section class="section">
-  <div class="section-header">
-    <h2 class="section-title">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><circle cx="12" cy="12" r="10"/></svg>
-      Popular Right Now
-    </h2>
-    <a href="{{ url_for('main.popular') }}" class="section-link">See all →</a>
-  </div>
-  <div class="movie-row">
-    <div class="row-arrow row-arrow-left" onclick="scrollRow(this, -1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
-    <div class="movie-row-inner">
-      {% for m in popular_movies %}
-      <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="movie-card">
-        <div class="mc-poster">
-          {% if m.poster_path %}
-          <img src="https://image.tmdb.org/t/p/w342{{ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
-          {% else %}
-          <div class="placeholder">🎬</div>
-          {% endif %}
-        </div>
-        <div class="mc-detail">
-          <div class="mc-actions">
-            <span class="mc-btn play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></span>
-          </div>
-          <div class="mc-meta">
-            <span class="match">{{ "%.0f"|format(m.vote_average * 10) }}% Match</span>
-            <span>{{ m.release_date[:4] if m.release_date else '' }}</span>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    <div class="row-arrow row-arrow-right" onclick="scrollRow(this, 1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{# ===== PERSONALIZED RECOMMENDATIONS ===== #}
+<!-- PERSONALIZED RECOMMENDATIONS (logged in only) -->
 {% if recommendations %}
-<section class="section">
+<section class="section animate-fade-up">
   <div class="section-header">
-    <h2 class="section-title">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--purple)" stroke-width="2"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-      Recommended for You
-    </h2>
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(99,102,241,0.2);">🎯</span>
+      Recommended For You
+      <span class="section-badge">AI</span>
+    </div>
     <a href="{{ url_for('main.recommendations') }}" class="section-link">See all →</a>
   </div>
-  <div class="movie-row">
-    <div class="row-arrow row-arrow-left" onclick="scrollRow(this, -1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
-    <div class="movie-row-inner">
-      {% for m in recommendations %}
-      <a href="{{ url_for('main.movie_details', tmdb_id=m.id) }}" class="movie-card">
-        <div class="mc-poster">
-          {% if m.poster_path or m.poster_url %}
-          <img src="{{ m.poster_url or 'https://image.tmdb.org/t/p/w342' ~ m.poster_path }}" alt="{{ m.title }}" loading="lazy">
-          {% else %}
-          <div class="placeholder">🎬</div>
-          {% endif %}
-        </div>
-        <div class="mc-detail">
-          <div class="mc-actions">
-            <span class="mc-btn play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></span>
-          </div>
-          <div class="mc-meta">
-            <span class="match">{{ "%.0f"|format(m.vote_average * 10) }}% Match</span>
-            <span>{{ m.release_date[:4] if m.release_date else '' }}</span>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    <div class="row-arrow row-arrow-right" onclick="scrollRow(this, 1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
+  <div class="movie-row stagger">
+    {% for m in recommendations %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
   </div>
 </section>
 {% endif %}
 
-{# ===== STATS BAR (logged in) ===== #}
-{% if stats %}
-<section class="section container">
-  <div class="stat-grid" style="margin-top:var(--sp-xl)">
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.total_ratings or 0 }}</div>
-      <div class="stat-label">Movies Rated</div>
+<!-- TRENDING BOLLYWOOD -->
+{% if trending_bollywood %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(255,107,53,0.2);">🔥</span>
+      Trending in Bollywood
     </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.total_reviews or 0 }}</div>
-      <div class="stat-label">Reviews Written</div>
+    <a href="{{ url_for('main.bollywood') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in trending_bollywood %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- TRENDING -->
+{% if trending %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(239,68,68,0.2);">🔥</span>
+      Trending This Week
     </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.watchlist_count or 0 }}</div>
-      <div class="stat-label">In Watchlist</div>
+    <a href="{{ url_for('main.trending') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in trending %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- NOW PLAYING -->
+{% if now_playing %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(99,102,241,0.2);">🍿</span>
+      Now In Theaters
     </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ "%.1f"|format(stats.average_rating or 0) }}</div>
-      <div class="stat-label">Avg. Rating</div>
+    <a href="{{ url_for('main.now_playing') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in now_playing %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- TOP 10 TV SERIES -->
+{% if top10_series %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(139,92,246,0.2);">📺</span>
+      Top 10 Series This Week
+      <span class="section-badge" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">TV</span>
     </div>
+    <a href="{{ url_for('main.tv_home') }}" class="section-link">See all →</a>
+  </div>
+  <div class="top10-row">
+    {% for m in top10_series %}
+    <a href="{{ url_for('main.tv_details', tv_id=m.id) }}" class="top10-card">
+      <span class="top10-number">{{ loop.index }}</span>
+      <div class="top10-poster">
+        {% if m.poster_url %}
+        <img src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+        {% else %}
+        <div class="no-poster">📺</div>
+        {% endif %}
+        <span class="media-badge media-badge-tv">TV</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- BOLLYWOOD -->
+{% if bollywood %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(255,107,53,0.2);">🇮🇳</span>
+      Bollywood
+    </div>
+    <a href="{{ url_for('main.bollywood') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in bollywood %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- SOUTH INDIAN -->
+{% if south_indian %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(0,201,167,0.2);">🌴</span>
+      South Indian Cinema
+    </div>
+    <a href="{{ url_for('main.south_indian') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in south_indian %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- TRENDING TV SERIES -->
+{% if trending_tv %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(139,92,246,0.2);">📺</span>
+      Trending TV Series
+    </div>
+    <a href="{{ url_for('main.tv_home') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in trending_tv %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- HOLLYWOOD -->
+{% if hollywood %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(155,89,182,0.2);">🎬</span>
+      Hollywood
+    </div>
+    <a href="{{ url_for('main.hollywood') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in hollywood %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- KOREAN -->
+{% if korean %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(231,76,60,0.2);">🇰🇷</span>
+      Korean Cinema
+    </div>
+    <a href="{{ url_for('main.korean') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in korean %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ANIME -->
+{% if anime %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(233,30,99,0.2);">🎌</span>
+      Anime Movies
+    </div>
+    <a href="{{ url_for('main.anime') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in anime %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- POPULAR -->
+{% if popular %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(245,158,11,0.2);">⭐</span>
+      Popular Movies
+    </div>
+    <a href="{{ url_for('main.popular') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in popular %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- TOP RATED -->
+{% if top_rated %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(34,197,94,0.2);">🏆</span>
+      Top Rated of All Time
+    </div>
+    <a href="{{ url_for('main.top_rated') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in top_rated %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- UPCOMING -->
+{% if upcoming %}
+<section class="section animate-fade-up">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="section-icon" style="background: rgba(20,184,166,0.2);">📅</span>
+      Coming Soon
+    </div>
+    <a href="{{ url_for('main.upcoming') }}" class="section-link">See all →</a>
+  </div>
+  <div class="movie-row stagger">
+    {% for m in upcoming %}
+    {% include 'partials/movie_card.html' %}
+    {% endfor %}
   </div>
 </section>
 {% endif %}
